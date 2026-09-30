@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"surface-container":"#eaedff","outline-variant":"#c7c4d8","on-primary-container":"#dad7ff","tertiary":"#703a00","error":"#ba1a1a","surface-dim":"#d2d9f4","inverse-primary":"#c3c0ff","on-secondary-fixed-variant":"#005049","error-container":"#ffdad6","tertiary-fixed":"#ffdcc3","on-secondary-container":"#006f66","on-surface":"#131b2e","on-background":"#131b2e","on-secondary":"#ffffff","on-tertiary-fixed-variant":"#6e3900","primary-fixed":"#e2dfff","surface-container-highest":"#dae2fd","secondary-container":"#86f2e4","outline":"#777587","on-primary-fixed-variant":"#3323cc","tertiary-container":"#934e00","secondary":"#006a61","on-tertiary-container":"#ffd2b1","tertiary-fixed-dim":"#ffb77d","surface-tint":"#4d44e3","secondary-fixed":"#89f5e7","surface-container-high":"#e2e7ff","on-error":"#ffffff","inverse-on-surface":"#eef0ff","surface-container-low":"#f2f3ff","primary-container":"#4f46e5","on-secondary-fixed":"#00201d","inverse-surface":"#283044","surface":"#faf8ff","on-error-container":"#93000a","on-primary":"#ffffff","primary-fixed-dim":"#c3c0ff","background":"#faf8ff","on-primary-fixed":"#0f0069","on-tertiary-fixed":"#2f1500","secondary-fixed-dim":"#6bd8cb","surface-variant":"#dae2fd","on-tertiary":"#ffffff","primary":"#3525cd","surface-container-lowest":"#ffffff","on-surface-variant":"#464555","surface-bright":"#faf8ff"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"margin":"2rem","space-lg":"1.5rem","space-xs":"0.25rem","margin-mobile":"1rem","gutter":"1.5rem","gutter-mobile":"1rem","space-xl":"2.5rem","space-md":"1rem","space-sm":"0.5rem"},"fontFamily":{"headline-xl-mobile":["Plus Jakarta Sans"],"headline-xl":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"],"body-md":["Inter"],"headline-md":["Plus Jakarta Sans"],"body-sm":["Inter"],"headline-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"headline-sm":["Plus Jakarta Sans"],"label-lg":["Inter"],"label-md":["Inter"],"display-lg":["Plus Jakarta Sans"],"label-sm":["Inter"]},"fontSize":{"headline-xl-mobile":["26px",{"lineHeight":"34px","letterSpacing":"-0.01em","fontWeight":"700"}],"headline-xl":["32px",{"lineHeight":"40px","letterSpacing":"-0.015em","fontWeight":"700"}],"display-lg-mobile":["34px",{"lineHeight":"42px","letterSpacing":"-0.015em","fontWeight":"700"}],"body-md":["15px",{"lineHeight":"22px","fontWeight":"400"}],"headline-md":["20px",{"lineHeight":"28px","letterSpacing":"-0.005em","fontWeight":"600"}],"body-sm":["13px",{"lineHeight":"18px","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","letterSpacing":"-0.01em","fontWeight":"600"}],"body-lg":["18px",{"lineHeight":"28px","fontWeight":"400"}],"headline-sm":["16px",{"lineHeight":"24px","fontWeight":"600"}],"label-lg":["14px",{"lineHeight":"20px","letterSpacing":"0.01em","fontWeight":"600"}],"label-md":["12px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"600"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","letterSpacing":"0.025em","fontWeight":"500"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 bottom-0 w-[260px] bg-surface-container-lowest flex flex-col justify-between z-50 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col"><div class="h-16 px-space-md flex items-center gap-space-sm bg-surface-container-lowest"><img alt="CampusCollab Logo Mark" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1Wx54uvUcEWUTaUCatIOk_ESch6M0mhpZd8PfsZlT6HY8axB92P6atAb-mTyIl97UIW9k4NHYvZtjaeUYaCZykCDeXsLQXaPvgGSE5ygNsm18mEeAsDSFqZDBmgDrvQr0UUtDFz2MMkHlh-LPcmb5TpKCy-ofBm9fzR79eEMaKbNmpouPcc4pIbP9-PDM0R_jNagaPnX_j7IcAVokSggq7BHVI1seBWB9S1giorGQjrcqbti9ijD_OhVgU"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">CampusCollab</span></div><nav class="flex flex-col gap-space-xs px-space-md mt-space-sm" data-active-classes="bg-primary-container text-on-primary font-label-lg text-label-lg rounded-lg shadow-sm"><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="discover" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">explore</span><span>Discover</span></div></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="my-projects" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">folder</span><span>My Projects</span></div><span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">2</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant font-label-lg text-label-lg hover:bg-surface-container hover:text-on-surface transition-colors" data-path="my-applications" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">send</span><span>My Applications</span></div><span class="px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">1</span></a><a aria-current="page" class="flex items-center justify-between px-space-md py-space-sm transition-colors bg-primary-container text-on-primary font-label-lg text-label-lg rounded-lg shadow-sm" data-path="my-profile" href="#"><div class="flex items-center gap-space-sm"><span class="material-symbols-outlined text-[20px]">person</span><span>My Profile</span></div></a></nav></div><div class="p-space-md bg-surface-container-low m-space-md rounded-xl flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmhI9bJZO1b9gljf-T8Vc9osqmyFSdNVeUfaJBNQ0yLb1hj2dLBLezvde4PaJk2JhRF44A3FnPHwTo-wQ4EyOu-21kJjBjIoFyQt2BVtIaveZ2r4jVH5IRdwjlUbOz6-UED9iAaKhtSiABYhrSqEDedfyFTebC_9sdXQAq1tgdO7FhK4_beOltz6IPhkx-sv-9Mb6jjPwmXeX4TovzNzGVreF7pRgX8ugg0fYb6qxPoWaCAPX-okwOTQ"/><div class="flex flex-col min-w-0"><span class="font-label-md text-label-md text-on-surface truncate">Chaitanya Gulechha</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">NIT Raipur</span></div></div><button aria-label="Account settings" class="text-on-surface-variant hover:text-on-surface transition-colors p-1 rounded-lg hover:bg-surface-container" type="button"><span class="material-symbols-outlined text-[18px]">more_vert</span></button></div></aside><div class="pl-[260px]"><header class="fixed top-0 left-[260px] right-0 h-16 bg-surface/80 backdrop-blur-xl z-40 shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 w-full px-space-lg flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-lg bg-surface-container-lowest shadow-sm text-on-surface"><span class="material-symbols-outlined text-secondary text-[18px]">school</span><span class="font-label-md text-label-md font-semibold">NIT Raipur</span><span class="material-symbols-outlined text-outline text-[16px]">expand_more</span></div></div><div class="flex items-center gap-space-md"><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span></button><button class="h-10 px-space-md rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg flex items-center gap-space-xs hover:bg-primary transition-colors shadow-sm" type="button"><span class="material-symbols-outlined text-[20px]">add</span><span>Create Project</span></button><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmhI9bJZO1b9gljf-T8Vc9osqmyFSdNVeUfaJBNQ0yLb1hj2dLBLezvde4PaJk2JhRF44A3FnPHwTo-wQ4EyOu-21kJjBjIoFyQt2BVtIaveZ2r4jVH5IRdwjlUbOz6-UED9iAaKhtSiABYhrSqEDedfyFTebC_9sdXQAq1tgdO7FhK4_beOltz6IPhkx-sv-9Mb6jjPwmXeX4TovzNzGVreF7pRgX8ugg0fYb6qxPoWaCAPX-okwOTQ"/></div></div></header><main class="w-full pt-16 bg-background min-h-screen"><div class="flex flex-col w-full">
+<div class="max-w-[1280px] w-full mx-auto px-margin py-space-lg flex flex-col gap-space-lg">
+<!-- Top Context & Live Feedback Banner -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-sm">
+<div class="flex flex-col">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-label-sm text-label-sm uppercase tracking-wider">
+<span>Student Directory</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>NIT Raipur</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary font-semibold">Public Profile &amp; Settings</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight mt-1">Student Profile Workspace</h1>
+</div>
+<!-- Live Success Banner (Dismissible / Responsive Toast) -->
+<div class="flex items-center gap-space-sm bg-secondary-container/60 text-on-secondary-container px-space-md py-space-xs rounded-xl shadow-sm" id="saveToast">
+<span class="material-symbols-outlined text-secondary text-[20px]">verified_user</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md font-semibold">Live Mode Active</span>
+<span class="font-body-sm text-body-sm opacity-90">Visible to campus project recruiters &amp; hackathons</span>
+</div>
+<button aria-label="Dismiss banner" class="ml-2 text-on-secondary-container/70 hover:text-on-secondary-container" onclick="document.getElementById('saveToast').classList.add('hidden')" type="button">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+</div>
+<!-- Main Asymmetric Dual-Column Architecture -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- ================= LEFT COLUMN: PUBLIC PROFILE PREVIEW (5 Cols) ================= -->
+<div class="lg:col-span-5 flex flex-col gap-space-lg">
+<!-- Primary Identity Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col relative overflow-hidden">
+<!-- Subtle Accent Background Blur Ring -->
+<div class="absolute -top-12 -right-12 w-40 h-40 bg-surface-container rounded-full blur-2xl pointer-events-none"></div>
+<!-- Top Badge & Quick Edit Button -->
+<div class="flex items-center justify-between gap-space-xs mb-space-md z-10">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+              Open to Collaborations
+            </span>
+<button class="inline-flex items-center gap-1 text-primary hover:text-on-primary-fixed-variant font-label-md text-label-md py-1 px-2.5 rounded-lg bg-primary-fixed/50 hover:bg-primary-fixed transition-colors" onclick="document.getElementById('editorCard').scrollIntoView({behavior: 'smooth'})" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>Edit Info</span>
+</button>
+</div>
+<!-- Avatar & Key Bio -->
+<div class="flex flex-col sm:flex-row sm:items-center gap-space-md z-10">
+<div class="relative w-24 h-24 shrink-0">
+<img alt="Chaitanya Gulechha portrait" class="w-24 h-24 rounded-full object-cover shadow-sm bg-surface-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmhI9bJZO1b9gljf-T8Vc9osqmyFSdNVeUfaJBNQ0yLb1hj2dLBLezvde4PaJk2JhRF44A3FnPHwTo-wQ4EyOu-21kJjBjIoFyQt2BVtIaveZ2r4jVH5IRdwjlUbOz6-UED9iAaKhtSiABYhrSqEDedfyFTebC_9sdXQAq1tgdO7FhK4_beOltz6IPhkx-sv-9Mb6jjPwmXeX4TovzNzGVreF7pRgX8ugg0fYb6qxPoWaCAPX-okwOTQ"/>
+<span class="absolute bottom-0 right-0 w-5 h-5 bg-surface-container-lowest rounded-full flex items-center justify-center p-0.5" title="Student Status: Active">
+<span class="w-full h-full bg-secondary rounded-full"></span>
+</span>
+</div>
+<div class="flex flex-col min-w-0">
+<h2 class="font-headline-md text-headline-md text-on-surface tracking-tight truncate">Chaitanya Gulechha</h2>
+<div class="flex items-center gap-1 text-on-surface-variant font-label-md text-label-md mt-0.5">
+<span class="material-symbols-outlined text-secondary text-[16px]">school</span>
+<span class="truncate font-medium">National Institute of Technology Raipur</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-snug">
+                Computer Science &amp; Engineering · Semester 5 (Class of 2026)
+              </p>
+<div class="flex items-center gap-1 text-outline font-label-sm text-label-sm mt-1.5">
+<span class="material-symbols-outlined text-[14px]">location_on</span>
+<span>Raipur, Chhattisgarh, India</span>
+</div>
+</div>
+</div>
+<!-- Academic Bio Section -->
+<div class="mt-space-md pt-space-sm bg-surface-container-low/50 -mx-space-lg px-space-lg py-space-sm z-10">
+<p class="font-body-md text-body-md text-on-surface leading-relaxed">
+              “Passionate about backend distributed systems, REST APIs, and fullstack web tooling. Active hackathon participant looking to build impactful university and civic tech solutions.”
+            </p>
+</div>
+<!-- Student Activity Stats Strip -->
+<div class="grid grid-cols-3 gap-space-xs mt-space-md pt-space-xs text-center z-10">
+<div class="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm text-primary font-bold">2</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Active Teams</span>
+</div>
+<div class="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm text-tertiary-container font-bold">8</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Tagged Skills</span>
+</div>
+<div class="bg-surface-container-low p-2.5 rounded-lg flex flex-col items-center">
+<span class="font-headline-sm text-headline-sm text-secondary font-bold">14</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Repo Commits</span>
+</div>
+</div>
+<!-- Verified Academic & Contact Links -->
+<div class="flex flex-col gap-space-xs mt-space-md z-10">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Connected Credentials</span>
+<a class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors group" href="https://github.com/chaitanyag" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-md bg-surface-container-highest flex items-center justify-center font-label-md text-label-md text-on-surface font-bold">git</span>
+<span class="font-label-md text-label-md text-on-surface font-medium truncate">github.com/chaitanyag</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary">arrow_outward</span>
+</a>
+<a class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors group" href="https://linkedin.com/in/chaitanya-gulechha" rel="noopener noreferrer" target="_blank">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded-md bg-primary-container text-on-primary flex items-center justify-center font-label-md text-label-md font-bold">in</span>
+<span class="font-label-md text-label-md text-on-surface font-medium truncate">linkedin.com/in/chaitanya-gulechha</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline group-hover:text-primary">arrow_outward</span>
+</a>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low text-on-surface">
+<div class="flex items-center gap-2 min-w-0">
+<span class="material-symbols-outlined text-outline text-[18px]">alternate_email</span>
+<span class="font-label-md text-label-md text-on-surface truncate">cgulechha.cse@nitrr.ac.in</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm shrink-0">Self-Declared</span>
+</div>
+</div>
+</div>
+<!-- Skills Showcase Preview Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">token</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Verified Skill Catalog</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">8 active</span>
+</div>
+<div class="flex flex-wrap gap-1.5 pt-1" id="previewSkillList">
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">C++</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">React</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">FastAPI</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">PostgreSQL</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">Docker</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">Git</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">Python</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full bg-surface-container-low text-on-surface font-label-md text-label-md">Tailwind CSS</span>
+</div>
+</div>
+<!-- Projects Joined / Contributed Showcase -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[20px]">hub</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Projects &amp; Teams</h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">2 projects</span>
+</div>
+<div class="flex flex-col gap-space-sm">
+<!-- Project 1 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-1.5">
+<div class="flex items-start justify-between gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">CampusCollab Core Engine</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                  Active
+                </span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+<span>Role: Backend Developer</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                Engineered high-throughput REST service in FastAPI with PostgreSQL indexing, orchestrating student matching algorithms.
+              </p>
+</div>
+<!-- Project 2 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-1.5">
+<div class="flex items-start justify-between gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Hostel Inventory Tracker</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm shrink-0">
+                  Completed
+                </span>
+</div>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px] text-tertiary">layers</span>
+<span>Role: Fullstack Contributor</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                Co-authored dynamic web portal for digital checkouts and real-time maintenance requests across 6 student residency blocks.
+              </p>
+</div>
+</div>
+</div>
+</div>
+<!-- ================= RIGHT COLUMN: INTERACTIVE PROFILE & SKILL EDITOR (7 Cols) ================= -->
+<div class="lg:col-span-7 flex flex-col gap-space-lg" id="editorCard">
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-lg">
+<!-- Editor Header & Notice Banner -->
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[22px]">manage_accounts</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Edit Student Information &amp; Skills Catalog</h2>
+</div>
+<span class="hidden sm:inline-block font-label-sm text-label-sm text-outline">Auto-save draft: Ready</span>
+</div>
+<!-- Self-declaration Policy Card -->
+<div class="flex items-start gap-space-sm p-space-sm rounded-lg bg-surface-container-low text-on-surface-variant mt-1">
+<span class="material-symbols-outlined text-tertiary text-[20px] shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm leading-relaxed">
+<strong class="text-on-surface font-medium">Important note:</strong> Colleges, departments, and skills are self-declared. No verification badges are assigned. Please keep your handles accurate to ensure smooth team vetting.
+              </p>
+</div>
+</div>
+<!-- Academic & Bio Form -->
+<form class="flex flex-col gap-space-md" id="profileEditForm" onsubmit="event.preventDefault(); triggerSaveAlert();">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<!-- Full Name -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg text-on-surface" for="fullName">Full Name</label>
+<input class="h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container focus:outline-none transition-colors" id="fullName" placeholder="e.g. Chaitanya Gulechha" required="" type="text" value="Chaitanya Gulechha"/>
+</div>
+<!-- College Select (Searchable / Fixed) -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg text-on-surface" for="collegeName">College / University</label>
+<div class="relative">
+<select class="h-10 w-full px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container focus:outline-none appearance-none transition-colors" id="collegeName">
+<option selected="" value="NIT Raipur">National Institute of Technology (NIT) Raipur</option>
+<option value="IIT Bombay">IIT Bombay</option>
+<option value="IIT Delhi">IIT Delhi</option>
+<option value="BITS Pilani">BITS Pilani</option>
+<option value="IIIT Hyderabad">IIIT Hyderabad</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Department -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg text-on-surface" for="department">Department / Major</label>
+<div class="relative">
+<select class="h-10 w-full px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container focus:outline-none appearance-none transition-colors" id="department">
+<option selected="" value="Computer Science">Computer Science &amp; Engineering</option>
+<option value="Information Technology">Information Technology</option>
+<option value="Electrical Engineering">Electrical &amp; Electronics</option>
+<option value="Mechanical Engineering">Mechanical Engineering</option>
+<option value="Biomedical">Biomedical Engineering</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+<!-- Semester -->
+<div class="flex flex-col gap-1.5">
+<label class="font-label-lg text-label-lg text-on-surface" for="semester">Current Semester</label>
+<div class="relative">
+<select class="h-10 w-full px-3 pr-8 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container focus:outline-none appearance-none transition-colors" id="semester">
+<option value="Sem 3">3rd Semester (Sophomore)</option>
+<option value="Sem 4">4th Semester (Sophomore)</option>
+<option selected="" value="Sem 5">5th Semester (Junior)</option>
+<option value="Sem 6">6th Semester (Junior)</option>
+<option value="Sem 7">7th Semester (Senior)</option>
+</select>
+<span class="material-symbols-outlined text-outline absolute right-2.5 top-2.5 pointer-events-none text-[20px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Bio Textarea with live character counter -->
+<div class="flex flex-col gap-1.5 mt-space-xs">
+<div class="flex items-center justify-between">
+<label class="font-label-lg text-label-lg text-on-surface" for="bioField">Academic &amp; Project Bio</label>
+<span class="font-label-sm text-label-sm text-on-surface-variant" id="bioCharCounter">185 / 300</span>
+</div>
+<textarea class="p-3 rounded-lg bg-surface-container-low text-on-surface font-body-md text-body-md focus:bg-surface-container focus:outline-none resize-none transition-colors leading-relaxed" id="bioField" maxlength="300" oninput="updateBioCounter(this)" rows="3">Passionate about backend distributed systems, REST APIs, and fullstack web tooling. Active hackathon participant looking to build impactful university and civic tech solutions.</textarea>
+<p class="font-body-sm text-body-sm text-outline">Keep it concise and focus on your core engineering stack and hackathon ambitions.</p>
+</div>
+<!-- Controlled Skills Catalog Module -->
+<div class="flex flex-col gap-space-sm mt-space-xs p-space-md rounded-xl bg-surface-container-low">
+<div class="flex flex-col gap-1">
+<label class="font-label-lg text-label-lg text-on-surface flex items-center justify-between">
+<span>Controlled Skills Catalog</span>
+<span class="text-secondary font-label-sm text-label-sm">Standardized Catalog v2.4</span>
+</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                  Select and tag verified tools and frameworks to assist candidate recommendation engines.
+                </p>
+</div>
+<!-- Interactive Search & Input -->
+<div class="relative">
+<span class="material-symbols-outlined text-outline absolute left-3 top-2.5 text-[20px]">search</span>
+<input class="h-10 w-full pl-10 pr-24 rounded-lg bg-surface-container-lowest text-on-surface font-body-md text-body-md placeholder:text-outline focus:bg-surface-container focus:outline-none transition-colors" id="skillSearchInput" onkeydown="handleSkillInputKey(event)" placeholder="Search and add skills from catalog (e.g. Docker, Rust, PyTorch)..." type="text"/>
+<button class="absolute right-1.5 top-1.5 h-7 px-2.5 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1" onclick="addCustomSkill()" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Add</span>
+</button>
+</div>
+<!-- Active Selected Skills (With X remove tags) -->
+<div class="flex flex-col gap-1.5 mt-1">
+<span class="font-label-sm text-label-sm text-outline uppercase tracking-wider">Active Tagged Skills</span>
+<div class="flex flex-wrap gap-2" id="editableSkillsList">
+<span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm">
+<span>C++</span>
+<button aria-label="Remove skill C++" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" onclick="removeSkillChip(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm">
+<span>React</span>
+<button aria-label="Remove skill React" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" onclick="removeSkillChip(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm">
+<span>FastAPI</span>
+<button aria-label="Remove skill FastAPI" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" onclick="removeSkillChip(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm">
+<span>PostgreSQL</span>
+<button aria-label="Remove skill PostgreSQL" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" onclick="removeSkillChip(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</span>
+<span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm">
+<span>Docker</span>
+<button aria-label="Remove skill Docker" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" onclick="removeSkillChip(this)" type="button">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</span>
+</div>
+</div>
+<!-- Suggested Trending Skills Chips -->
+<div class="flex flex-col gap-1.5 pt-space-xs mt-1">
+<span class="font-label-sm text-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">trending_up</span>
+<span>Trending on Campus: click to add quickly</span>
+</span>
+<div class="flex flex-wrap gap-1.5">
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-colors" onclick="quickAddSuggested('Kubernetes', this)" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>Kubernetes</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-colors" onclick="quickAddSuggested('Next.js', this)" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>Next.js</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-colors" onclick="quickAddSuggested('Redis', this)" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>Redis</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-colors" onclick="quickAddSuggested('PyTorch', this)" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>PyTorch</span>
+</button>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-highest/60 hover:bg-surface-container-highest text-on-surface font-label-sm text-label-sm transition-colors" onclick="quickAddSuggested('GraphQL', this)" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>
+<span>GraphQL</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Social and Portfolio URLs -->
+<div class="flex flex-col gap-space-sm mt-space-xs">
+<span class="font-label-lg text-label-lg text-on-surface">Social &amp; Portfolio Links</span>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
+<!-- GitHub Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline" for="githubUrl">GitHub Handle / URL</label>
+<div class="relative">
+<span class="material-symbols-outlined text-outline absolute left-2.5 top-2.5 text-[18px]">code</span>
+<input class="h-10 w-full pl-9 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:bg-surface-container focus:outline-none transition-colors" id="githubUrl" type="text" value="github.com/chaitanyag"/>
+</div>
+</div>
+<!-- LinkedIn Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline" for="linkedinUrl">LinkedIn URL</label>
+<div class="relative">
+<span class="material-symbols-outlined text-outline absolute left-2.5 top-2.5 text-[18px]">share</span>
+<input class="h-10 w-full pl-9 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:bg-surface-container focus:outline-none transition-colors" id="linkedinUrl" type="text" value="linkedin.com/in/chaitanya-gulechha"/>
+</div>
+</div>
+<!-- Personal Site Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-sm text-label-sm text-outline" for="websiteUrl">Personal Website / Blog</label>
+<div class="relative">
+<span class="material-symbols-outlined text-outline absolute left-2.5 top-2.5 text-[18px]">language</span>
+<input class="h-10 w-full pl-9 pr-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm focus:bg-surface-container focus:outline-none transition-colors" id="websiteUrl" placeholder="https://chaitanya.dev" type="text"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Form Action Footer Controls -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-sm mt-space-md pt-space-md">
+<div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Profile visibility is set to Public</span>
+</div>
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<button class="h-10 px-space-md rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low font-label-lg text-label-lg transition-colors" onclick="discardFormChanges()" type="button">
+                  Discard Changes
+                </button>
+<button class="h-10 px-space-lg rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-lg text-label-lg shadow-sm flex items-center justify-center gap-space-xs transition-colors" type="submit">
+<span class="material-symbols-outlined text-[20px]">check</span>
+<span>Save Changes</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+<script>
+    function updateBioCounter(el) {
+      const counter = document.getElementById('bioCharCounter');
+      if (counter) {
+        counter.textContent = el.value.length + ' / 300';
+      }
+    }
+
+    function removeSkillChip(btn) {
+      const chip = btn.closest('span');
+      if (chip) chip.remove();
+    }
+
+    function addCustomSkill() {
+      const input = document.getElementById('skillSearchInput');
+      if (!input || !input.value.trim()) return;
+      const skillName = input.value.trim();
+
+      const container = document.getElementById('editableSkillsList');
+      const newChip = document.createElement('span');
+      newChip.className = 'inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm';
+      newChip.innerHTML = `<span>${skillName}</span><button type="button" onclick="removeSkillChip(this)" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" aria-label="Remove skill"><span class="material-symbols-outlined text-[16px]">close</span></button>`;
+      container.appendChild(newChip);
+
+      input.value = '';
+    }
+
+    function handleSkillInputKey(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addCustomSkill();
+      }
+    }
+
+    function quickAddSuggested(skill, btn) {
+      const container = document.getElementById('editableSkillsList');
+      const newChip = document.createElement('span');
+      newChip.className = 'inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-surface-container-lowest text-on-surface font-label-md text-label-md shadow-sm';
+      newChip.innerHTML = `<span>${skill}</span><button type="button" onclick="removeSkillChip(this)" class="hover:text-error text-outline transition-colors p-0.5 rounded-full" aria-label="Remove skill"><span class="material-symbols-outlined text-[16px]">close</span></button>`;
+      container.appendChild(newChip);
+      btn.classList.add('opacity-40', 'pointer-events-none');
+    }
+
+    function triggerSaveAlert() {
+      const toast = document.getElementById('saveToast');
+      if (toast) {
+        toast.classList.remove('hidden');
+        toast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    function discardFormChanges() {
+      if (confirm('Reset your profile draft to currently published values?')) {
+        location.reload();
+      }
+    }
+  </script>
+</div></main></div></body></html>
