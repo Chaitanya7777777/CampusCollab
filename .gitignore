@@ -36,5 +36,5 @@ Desktop.ini
 *.swo
 *~
 
-# Preserve extracted Stitch references; omit duplicate archives
-/design/stitch/*.zip
+# Local design references are not published to GitHub
+/design/

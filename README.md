@@ -95,7 +95,7 @@ Storage is accessed asynchronously after hydration, never during server renderin
 
 ## Design and deferred scope
 
-References are preserved under `design/stitch/`, including `create_project/`, `my_projects/` and `owner_dashboard/` (actual names use underscores). Screenshots, HTML and DESIGN.md were inspected. Conflicting tokens were resolved against screenshots and the existing lavender/indigo design system, white cards, teal status accents and responsive sidebar/header.
+Design references are kept locally under `design/stitch/` and excluded from Git; they are not required to run or build the app. Screenshots, HTML and DESIGN.md guided implementation. Conflicting tokens were resolved against screenshots and the existing lavender/indigo design system, white cards, teal status accents and responsive sidebar/header.
 
 State simulators, verification/recommendation claims, fabricated activity statistics and decorative dead controls are omitted. No notifications, bookmarks, sharing or timeline management.
 
