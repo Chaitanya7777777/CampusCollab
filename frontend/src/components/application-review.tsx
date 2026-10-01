@@ -92,9 +92,16 @@ export function ApplicationReview({
             >
               {application.status}
             </Badge>
-            {application.decidedAt && (
+            {application.decidedAt &&
+              (application.status === "accepted" ||
+                application.status === "rejected") && (
+                <span className="helper">
+                  Decision recorded {displayDate(application.decidedAt)}
+                </span>
+              )}
+            {application.withdrawnAt && application.status === "withdrawn" && (
               <span className="helper">
-                Decision recorded {displayDate(application.decidedAt)}
+                Withdrawn {displayDate(application.withdrawnAt)}
               </span>
             )}
           </div>

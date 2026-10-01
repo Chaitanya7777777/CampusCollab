@@ -15,6 +15,7 @@ const applicationRecord = applicationSchema.extend({
   studentId: z.string(),
   status: z.enum(["pending", "accepted", "rejected", "withdrawn"]),
   decidedAt: z.iso.datetime().optional(),
+  withdrawnAt: z.iso.datetime().optional(),
   createdAt: z.iso.datetime(),
 });
 const legacySchema = z.object({
@@ -188,7 +189,9 @@ function validateDatabase(db: Database) {
   });
   db.applications.forEach((a) => {
     student(a.studentId);
-    if (!db.roles.some((r) => r.id === a.roleId && r.projectId === a.projectId))
+    // Keep submitted history if a related record is no longer available.
+    // A surviving role must still belong to the application's project.
+    if (db.roles.some((r) => r.id === a.roleId && r.projectId !== a.projectId))
       throw Error("Invalid application");
   });
   // Persisted published projects must remain valid even when storage was edited outside the app.

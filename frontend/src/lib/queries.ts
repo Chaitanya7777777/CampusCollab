@@ -9,7 +9,7 @@ import { mockApi } from "./mock-api";
 import { getActor, subscribeIdentity } from "./demo-identity";
 import { CURRENT_STUDENT_ID } from "./seed";
 import { useSyncExternalStore } from "react";
-import type { DiscoveryFilters } from "./models";
+import type { DiscoveryFilters, ApplicationFilters } from "./models";
 import type {
   ApplicationInput,
   ProfileInput,
@@ -83,6 +83,24 @@ export const useMyProjects = () =>
     queryKey: [useActor(), "my-projects"],
     queryFn: () => mockApi.myProjects(),
   });
+export const useMyApplications = (filters: ApplicationFilters) =>
+  useQuery({
+    queryKey: [useActor(), "my-applications", filters],
+    queryFn: () => mockApi.myApplications(filters),
+    placeholderData: keepPreviousData,
+  });
+export const useMyApplication = (id: string) =>
+  useQuery({
+    queryKey: [useActor(), "my-application", id],
+    queryFn: () => mockApi.myApplication(id),
+  });
+export function useWithdrawApplication() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mockApi.withdrawApplication(id),
+    onSettled: () => client.invalidateQueries(),
+  });
+}
 export const useOwnerDashboard = (id: string) =>
   useQuery({
     queryKey: [useActor(), "owner-dashboard", id],

@@ -58,6 +58,7 @@ export interface Application {
   studentId: string;
   status: "pending" | "accepted" | "rejected" | "withdrawn";
   decidedAt?: string;
+  withdrawnAt?: string;
   motivation: string;
   experience: string;
   portfolio: string;
@@ -71,6 +72,20 @@ export interface Database {
   roles: RecruitmentRole[];
   memberships: Membership[];
   applications: Application[];
+}
+export interface ApplicantApplication {
+  application: Application;
+  projectTitle: string;
+  projectType: string;
+  roleTitle: string;
+  projectStatus: "published" | "archived" | "unavailable";
+  projectHref: string | null;
+  isMember: boolean;
+}
+export interface ApplicationFilters {
+  search: string;
+  status: "all" | Application["status"];
+  sort: "newest" | "oldest";
 }
 export interface ProjectDraft {
   id: string;

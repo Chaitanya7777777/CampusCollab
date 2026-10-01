@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import {
   Compass,
   Folder,
+  Send,
   GraduationCap,
   Network,
   UserRound,
@@ -19,6 +20,7 @@ function Navigation() {
       {[
         { href: "/discover", label: "Discover", icon: Compass },
         { href: "/my-projects", label: "My Projects", icon: Folder },
+        { href: "/my-applications", label: "My Applications", icon: Send },
         { href: "/profile", label: "My Profile", icon: UserRound },
       ].map(({ href, label, icon: Icon }) => (
         <Link

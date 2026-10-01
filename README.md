@@ -1,6 +1,6 @@
 ﻿# CampusCollab
 
-A frontend prototype for students to discover projects, recruit for contribution roles, apply and form teams. Includes project creation, private drafts, My Projects and owner application review.
+A frontend prototype for students to discover projects, recruit for contribution roles, apply and form teams. Includes project creation, private drafts, My Projects, owner application review and My Applications with withdrawal.
 
 ## Run locally
 
@@ -35,6 +35,7 @@ Playwright uses installed Google Chrome and starts or reuses a development serve
 | `/projects/new` | Creation, repeatable roles/catalog skills, live preview, Save Draft, Publish, feedback and unsaved-navigation confirmation. |
 | `/projects/[projectId]/edit` | Owner-only private draft editor; saves and publication preserve the project ID. |
 | `/my-projects` | Owned / Joined tabs, title search, status, recruitment, capacity, role openings and owner-only pending counts. Drafts open the editor; owned published/archived projects open management. Joined excludes owned projects. |
+| `/my-applications` | Current student's applications, project/role search, All/Pending/Accepted/Rejected/Withdrawn filters with global counts, newest/oldest sorting, desktop table/mobile cards, read-only submitted details and confirmed withdrawal. Linked from navigation and application success feedback. |
 | `/projects/[projectId]/manage` | Owner-only Overview, Applications, Team and Settings. URL tabs: `?tab=applications`, `?tab=team`, `?tab=settings`. |
 | `/profile` | Per-user profile editing, catalog skill selection/removal, validation, save/discard and consistent saved summaries. |
 
@@ -56,6 +57,13 @@ Manual walkthrough:
 4. Switch to **Aarav** or inspect his other tab. The project shows **Application accepted** and membership. It appears in **My Projects → Joined projects**.
 5. Capacity is **2 of 2**, the role has **0** openings, and pending count is **0**. Reload preserves the result; storage events update other tabs without manual reload.
 
+Withdrawal walkthrough (use a separate pending application):
+
+1. As **Maya**, apply to **Smart Traffic Management** for an open role.
+2. Follow **My Applications** in the success dialog, or use desktop/mobile navigation. Open **View Application** to inspect the submitted content.
+3. Choose **Withdraw**, read the no-reapplication confirmation, and confirm. The status becomes **Withdrawn**, with a separate withdrawal timestamp. Reload preserves the change.
+4. Switch to **Aarav**, this seed project's owner. Open **Manage Project → Applications → Withdrawn** and review Maya's request. It is read-only, is absent from Pending, and cannot be accepted. Open owner panels in another tab update automatically.
+
 ## Product and permission rules
 
 - Capacity includes the owner and derives from memberships. No mutable member/opening counters are stored. Contribution roles confer no administrative permissions.
@@ -65,6 +73,8 @@ Manual walkthrough:
 - One application per student per project, including processed/withdrawn records. Membership, closed recruitment, archiving or a full role prevents applying. Missing skills do not prohibit application or acceptance.
 - Acceptance re-reads project, application, role and memberships inside the lock. It verifies ownership, published/open recruitment, pending status, project/role association, no existing membership and both capacity limits. One write adds the contribution membership and accepted status/decision time. Repeat decisions return an already-processed error and refresh the UI.
 - Rejection requires an owner, published project and pending application. Closing preserves pending records and permits rejection, but blocks new applications and acceptance.
+- Only the applicant can withdraw their own pending application, including when recruitment is closed or the project is archived. The serialized mutation re-reads current state, derives identity internally, records `withdrawnAt`, and writes once. Withdrawal does not create/remove memberships or occupy slots; it still blocks reapplication. Accepted, rejected and already-withdrawn requests refuse withdrawal. Acceptance and withdrawal competing for the same pending application allow only one terminal transition under the existing lock guarantees.
+- Applicant list/detail reads are actor-scoped. Counts cover all their applications, independent of filters; the filtered count is separate. Submitted content remains read-only. **View Team** depends on actual membership and an accessible project page, not acceptance history. Accepted applications without membership explain that distinction. Archived history remains readable; missing/private project records use safe fallback labels and omit inaccessible links. No private draft labels are exposed.
 - Archiving closes recruitment and removes discovery visibility atomically. Applications, roles and memberships remain; dashboards are readable but management mutations are disabled.
 
 **Demo identity and mock authorization are prototype behavior, not real authentication or backend security.** Browser users can inspect/edit local storage. A backend must independently enforce identity, permissions, privacy, unique `(student_id, project_id)` constraints and transactional capacity checks. All people/contact details are fictional and do not represent Chaitanya. Skills are self-declared; no identity, college or skill verification is claimed.
@@ -86,6 +96,7 @@ The key stays **`campuscollab.prototype.v1`** to preserve installations; the pay
 
 - Version 1 profile and applications migrate in memory to per-user profiles and shared applications. Previously submitted pending applications appear in the correct owner's inbox.
 - Version 2 projects, drafts, roles, memberships, profiles and applications are preserved. Version 3 adds decision/archive metadata, withdrawn status support and narrowly scoped seed recruitment/archive overrides.
+- My Applications adds optional `withdrawnAt` to the existing version 3 application schema without resetting storage or copying applications. Older records load unchanged; missing legacy withdrawal times show **Time not recorded**. Owner decisions keep `decidedAt`; applicant withdrawal uses its own timestamp. Application history can survive unavailable related records, but surviving role IDs must still match the recorded project. Existing project, membership and capacity validation remains in place.
 - Reading does not rewrite storage. The next successful mutation writes version 3 once. Unknown versions, malformed records, duplicate IDs and invalid relationships show an error and preserve the original value. Schema mismatch never resets user data.
 - Created records merge by stable IDs with immutable seed records. Seed overrides contain only recruitment/archive fields; seed content/memberships are not copied or overwritten. Legacy joined dates show **Not recorded** rather than invented dates.
 - A failed write leaves membership and application status unchanged. Web Locks serialize read/validate/write transactions across tabs where supported. The synchronous fallback serializes only within one tab; cross-tab races cannot be guaranteed safe without Web Locks. A backend transaction is required for real multi-user guarantees.
@@ -99,7 +110,7 @@ Design references are kept locally under `design/stitch/` and excluded from Git;
 
 State simulators, verification/recommendation claims, fabricated activity statistics and decorative dead controls are omitted. No notifications, bookmarks, sharing or timeline management.
 
-Deferred: My Applications, withdrawal UI, published-project editing, archive restoration, member removal, invitations, ownership transfer, public student profiles, real sign-in/onboarding and backend authorization/persistence. Unavailable destinations are omitted from navigation. No email delivery, chat, task boards, AI, Redis or AWS infrastructure. The small mock collection is in memory without pagination; deadlines are sample metadata, not a scheduler. Browser checks use Chrome emulation, not physical devices or Safari.
+Deferred: published-project editing, archive restoration, member removal, invitations, ownership transfer, public student profiles, real sign-in/onboarding and backend authorization/persistence. Unavailable destinations are omitted from navigation. No email delivery, chat, task boards, AI, Redis or AWS infrastructure. The small mock collection is in memory without pagination; deadlines are sample metadata, not a scheduler. Browser checks use Chrome emulation, not physical devices or Safari. The backend must implement applicant-scoped list/detail reads and transactional withdrawal/acceptance rather than trusting these prototype controls.
 
 ## Validation
 
@@ -107,4 +118,6 @@ Vitest covers existing filtering/profile/application behavior; draft reload/edit
 
 Playwright covers existing screens plus creation, validation, unsaved confirmation, per-tab identity isolation, save recovery, My Projects, owner filters/review, keyboard confirmations, accepted status/membership, joined projects, cross-tab stale panels, private-panel isolation and archived controls. Desktop/mobile screenshots verify overflow and bounded dialogs; tablet checks preserve existing layouts.
 
-Latest completed run: lint passed with no warnings; strict TypeScript passed; production build passed; **32 Vitest tests passed** and **21 Playwright tests passed** (desktop/mobile interactions plus tablet layout). Desktop/mobile My Projects, inbox, review and creation screenshots were visually inspected. Review panels fit the viewport and scroll internally. Browser testing also caught and fixed a demo-selector hydration race; the selector stays disabled until its event handlers are ready.
+My Applications adds checks for list/detail identity isolation, search/status counts/sorting, withdrawal/reload, unauthorized and terminal-state attempts, competing acceptance/withdrawal, closed/archived withdrawal, accepted history without membership, unavailable/private references and atomic failed writes. Browser checks cover submission-to-list navigation, desktop/mobile rendering, keyboard dialogs, cross-tab owner updates, identity isolation and recoverable withdrawal failures.
+
+Latest completed run: lint passed without warnings; strict TypeScript passed; production build passed; **44 Vitest tests passed** and **27 Playwright tests passed**. The full regression suite covers previous milestones and the new applicant workflow on desktop/mobile, plus existing tablet layout checks. My Applications table/cards and scrollable details were visually inspected on desktop and mobile; viewport overflow and keyboard confirmation checks passed.

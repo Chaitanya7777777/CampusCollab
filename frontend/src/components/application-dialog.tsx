@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,9 +68,12 @@ export function ApplicationDialog({
               <h2>Application submitted!</h2>
               <p>
                 Your application for <strong>{role.title}</strong> is pending.
-                You can check its status on this project page.
+                Track its status in My Applications.
               </p>
               <Dialog.Close className="button">Back to project</Dialog.Close>
+              <Link className="button secondary" href="/my-applications">
+                My Applications
+              </Link>
             </div>
           ) : (
             <>

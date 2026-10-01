@@ -16,12 +16,46 @@ import type {
   ProjectView,
   OwnerDashboard,
   MyProjectSummary,
+  Application,
+  ApplicantApplication,
+  ApplicationFilters,
 } from "./models";
 
 export const STORAGE_KEY = "campuscollab.prototype.v1";
 export interface StorageAdapter {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+}
+export const defaultApplicationFilters: ApplicationFilters = {
+  search: "",
+  status: "all",
+  sort: "newest",
+};
+function applicantView(
+  db: Database,
+  application: Application,
+): ApplicantApplication {
+  // Only published/archived records are public. Never derive labels from private drafts.
+  const project = db.projects.find((p) => p.id === application.projectId);
+  const role = project
+    ? db.roles.find(
+        (r) => r.id === application.roleId && r.projectId === project.id,
+      )
+    : undefined;
+  return {
+    application,
+    projectTitle: project?.title ?? "Project unavailable",
+    projectType: project?.type ?? "Project",
+    roleTitle: role?.title ?? "Role unavailable",
+    projectStatus: project ? (project.status ?? "published") : "unavailable",
+    projectHref: project ? `/projects/${encodeURIComponent(project.id)}` : null,
+    isMember:
+      !!project &&
+      db.memberships.some(
+        (m) =>
+          m.projectId === project.id && m.studentId === application.studentId,
+      ),
+  };
 }
 function requireOwner(db: Database, projectId: string, actor: string) {
   const project = db.projects.find(
@@ -194,6 +228,78 @@ export function createMockApi(
     return guarded(); // Synchronous read/validate/write also serializes calls within one tab.
   }
   return {
+    async myApplications(
+      filters: ApplicationFilters = defaultApplicationFilters,
+    ) {
+      const actor = actorSource();
+      await delay();
+      const db = read();
+      const entries = db.applications
+        .filter((a) => a.studentId === actor)
+        .map((a) => applicantView(db, a));
+      const counts = {
+        all: entries.length,
+        pending: 0,
+        accepted: 0,
+        rejected: 0,
+        withdrawn: 0,
+      };
+      entries.forEach((entry) => counts[entry.application.status]++);
+      const search = filters.search.trim().toLowerCase();
+      const applications = entries
+        .filter(
+          (entry) =>
+            (filters.status === "all" ||
+              entry.application.status === filters.status) &&
+            (!search ||
+              `${entry.projectTitle} ${entry.roleTitle}`
+                .toLowerCase()
+                .includes(search)),
+        )
+        .sort((a, b) => {
+          const order =
+            a.application.createdAt.localeCompare(b.application.createdAt) ||
+            a.application.id.localeCompare(b.application.id);
+          return filters.sort === "oldest" ? order : -order;
+        });
+      return { applications, counts };
+    },
+    async myApplication(id: string) {
+      const actor = actorSource();
+      await delay();
+      const db = read();
+      const application = db.applications.find(
+        (a) => a.id === id && a.studentId === actor,
+      );
+      if (!application)
+        throw new Error(
+          "Application not found or you do not have permission to view it.",
+        );
+      return applicantView(db, application);
+    },
+    async withdrawApplication(id: string) {
+      const actor = actorSource();
+      return mutate(() => {
+        const db = read();
+        const application = db.applications.find(
+          (a) => a.id === id && a.studentId === actor,
+        );
+        if (!application)
+          throw new Error(
+            "Application not found or you do not have permission to withdraw it.",
+          );
+        if (application.status !== "pending")
+          throw new Error(
+            `Application already processed (${application.status}). Refresh to see the latest status.`,
+          );
+        application.status = "withdrawn";
+        application.withdrawnAt = new Date().toISOString();
+        // Withdrawal is an applicant action, not an owner's decision.
+        delete application.decidedAt;
+        write(db);
+        return application;
+      });
+    },
     async myProjects(): Promise<{
       owned: MyProjectSummary[];
       joined: MyProjectSummary[];
