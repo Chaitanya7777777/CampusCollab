@@ -13,6 +13,9 @@ import type { ReactNode } from "react";
 import { useSession } from "@/lib/queries";
 import { Avatar } from "./ui";
 import { DemoUser } from "./demo-user";
+import { API_MODE } from "@/lib/app-mode";
+import { AuthFrame } from "./public-pages";
+import { ApiShell } from "./api-shell";
 function Navigation() {
   const path = usePathname();
   return (
@@ -90,6 +93,11 @@ export function Header() {
   );
 }
 export function AppShell({ children }: { children: ReactNode }) {
+  const path = usePathname();
+  if (API_MODE) return <ApiShell>{children}</ApiShell>;
+  if (path === "/") return children;
+  if (path === "/login" || path === "/signup")
+    return <AuthFrame signup={path === "/signup"}>{children}</AuthFrame>;
   return (
     <>
       <a href="#main" className="skip-link">

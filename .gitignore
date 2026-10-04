@@ -1,6 +1,7 @@
 # Dependencies and generated output
 node_modules/
 .next/
+.next-api/
 out/
 dist/
 build/
@@ -38,3 +39,16 @@ Desktop.ini
 
 # Local design references are not published to GitHub
 /design/
+
+# Python environments and generated artifacts
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache*/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/

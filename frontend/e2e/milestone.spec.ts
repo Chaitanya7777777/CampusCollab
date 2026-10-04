@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 test("filters, removable chips, reset, sorting and project navigation", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/discover");
   await expect(page).toHaveURL(/\/discover$/);
   await expect(page.getByTestId("project-card")).toHaveCount(6);
   await page.getByLabel("Search projects, skills, or roles").fill("traffic");

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { API_MODE } from "@/lib/app-mode";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -706,7 +707,9 @@ function ProjectForm({
             </Dialog.Title>
             <Dialog.Description>
               {feedback === "published"
-                ? "Your project is now in Discover and ready for role applications."
+                ? API_MODE
+                  ? "Your project is now in Discover. Students can apply to your recruitment roles."
+                  : "Your project is now in Discover and ready for role applications."
                 : "Your draft is saved privately. Continue editing whenever you are ready."}
             </Dialog.Description>
             <div className="form-actions">

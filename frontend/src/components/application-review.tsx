@@ -112,6 +112,9 @@ export function ApplicationReview({
             <Skills
               skills={skills.filter((s) => applicant.skillIds.includes(s.id))}
             />
+            {!applicant.skillIds.length && (
+              <p className="helper">No skills selected.</p>
+            )}
             <div className="profile-links">
               {[
                 ["GitHub", applicant.github],

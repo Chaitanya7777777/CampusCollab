@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { LandingPage } from "@/components/public-pages";
 export default function Home() {
-  redirect("/discover");
+  return <LandingPage />;
 }

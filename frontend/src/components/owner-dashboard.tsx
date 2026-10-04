@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
+import { API_MODE } from "@/lib/app-mode";
 import { useRef, useState } from "react";
 import { ArrowLeft, Archive, Inbox, Search, Settings } from "lucide-react";
 import {
   useArchiveProject,
   useOwnerDashboard,
+  useOwnerInbox,
+  useOwnerApplication,
   useRecruitment,
 } from "@/lib/queries";
 import type {
@@ -100,17 +103,19 @@ function SummaryStats({ data }: { data: DashboardData }) {
           capacity={data.project.capacity}
         />
       </div>
-      <Link
-        className="panel"
-        href={`/projects/${data.project.id}/manage?tab=applications`}
-      >
-        <p className="eyebrow">Pending inbox</p>
-        <p>
-          <strong>{data.pendingCount}</strong>{" "}
-          {data.pendingCount === 1 ? "application" : "applications"}
-        </p>
-        <span className="helper">Review applicants →</span>
-      </Link>
+      {
+        <Link
+          className="panel"
+          href={`/projects/${data.project.id}/manage?tab=applications`}
+        >
+          <p className="eyebrow">Pending inbox</p>
+          <p>
+            <strong>{data.pendingCount}</strong>{" "}
+            {data.pendingCount === 1 ? "application" : "applications"}
+          </p>
+          <span className="helper">Review applicants →</span>
+        </Link>
+      }
       <div className="panel">
         <p className="eyebrow">Recruitment</p>
         <p>
@@ -118,7 +123,9 @@ function SummaryStats({ data }: { data: DashboardData }) {
         </p>
         <Badge tone={data.project.recruitment === "open" ? "teal" : "muted"}>
           {data.project.recruitment === "open"
-            ? "Open to applications"
+            ? API_MODE
+              ? "Recruitment open"
+              : "Open to applications"
             : "Recruitment closed"}
         </Badge>
       </div>
@@ -179,12 +186,22 @@ function ApplicationInbox({
   const [status, setStatus] = useState("pending");
   const [roleId, setRoleId] = useState("");
   const [search, setSearch] = useState("");
-  const filtered = data.applications.filter(
-    (a) =>
-      (status === "all" || a.application.status === status) &&
-      (!roleId || a.role.id === roleId) &&
-      a.applicant.name.toLowerCase().includes(search.trim().toLowerCase()),
+  const [page, setPage] = useState(1);
+  const inbox = useOwnerInbox(
+    data.project.id,
+    { status, roleId, search, sort: "newest" },
+    page,
   );
+  const filtered = API_MODE
+    ? inbox.isError
+      ? []
+      : (inbox.data?.applications ?? [])
+    : data.applications.filter(
+        (a) =>
+          (status === "all" || a.application.status === status) &&
+          (!roleId || a.role.id === roleId) &&
+          a.applicant.name.toLowerCase().includes(search.trim().toLowerCase()),
+      );
   return (
     <div className="space-y-4">
       <section className="panel space-y-4">
@@ -193,13 +210,18 @@ function ApplicationInbox({
             <button
               key={s}
               aria-pressed={status === s}
-              onClick={() => setStatus(s)}
+              onClick={() => {
+                setStatus(s);
+                setPage(1);
+              }}
             >
               {s[0].toUpperCase() + s.slice(1)} (
-              {s === "all"
-                ? data.applications.length
-                : data.applications.filter((a) => a.application.status === s)
-                    .length}
+              {API_MODE
+                ? (inbox.data?.counts[s as keyof typeof inbox.data.counts] ?? 0)
+                : s === "all"
+                  ? data.applications.length
+                  : data.applications.filter((a) => a.application.status === s)
+                      .length}
               )
             </button>
           ))}
@@ -208,7 +230,10 @@ function ApplicationInbox({
           <select
             aria-label="Filter applications by role"
             value={roleId}
-            onChange={(e) => setRoleId(e.target.value)}
+            onChange={(e) => {
+              setRoleId(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All roles</option>
             {data.project.roles.map((r) => (
@@ -223,15 +248,22 @@ function ApplicationInbox({
               aria-label="Search applicant by name"
               placeholder="Search applicant by name…"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
             />
           </div>
         </div>
       </section>
       <p className="helper" role="status">
-        {filtered.length}{" "}
+        {API_MODE ? (inbox.data?.total ?? 0) : filtered.length}{" "}
         {filtered.length === 1 ? "application" : "applications"} shown
       </p>
+      {API_MODE && inbox.isPending && <Loading label="Loading applications…" />}
+      {API_MODE && inbox.isError && (
+        <ErrorState error={inbox.error} retry={() => void inbox.refetch()} />
+      )}
       {filtered.map((entry) => (
         <ApplicantRow
           key={entry.application.id}
@@ -239,33 +271,60 @@ function ApplicationInbox({
           onReview={(el) => onReview(entry.application.id, el)}
         />
       ))}
-      {!filtered.length && (
-        <div className="state-panel">
-          <Inbox size={32} />
-          <h2>
-            {data.applications.length
-              ? "No applications match these filters"
-              : "No applications yet"}
-          </h2>
-          <p>
-            {data.applications.length
-              ? "Try another role, applicant name, or status."
-              : "Applications to this project will appear here when students apply."}
-          </p>
-          {data.applications.length > 0 && (
+      {!filtered.length &&
+        (!API_MODE || (!inbox.isPending && !inbox.isError)) && (
+          <div className="state-panel">
+            <Inbox size={32} />
+            <h2>
+              {(API_MODE ? inbox.data?.counts.all : data.applications.length)
+                ? "No applications match these filters"
+                : "No applications yet"}
+            </h2>
+            <p>
+              {(API_MODE ? inbox.data?.counts.all : data.applications.length)
+                ? "Try another role, applicant name, or status."
+                : "Applications to this project will appear here when students apply."}
+            </p>
+            {(API_MODE
+              ? (inbox.data?.counts.all ?? 0)
+              : data.applications.length) > 0 && (
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setStatus("all");
+                  setRoleId("");
+                  setSearch("");
+                  setPage(1);
+                }}
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+        )}
+      {API_MODE &&
+        inbox.data &&
+        (page > 1 || inbox.data.total > inbox.data.pageSize) && (
+          <nav aria-label="Inbox pages" className="flex gap-3">
             <button
               className="button secondary"
-              onClick={() => {
-                setStatus("all");
-                setRoleId("");
-                setSearch("");
-              }}
+              disabled={page === 1 || inbox.isFetching}
+              onClick={() => setPage(page - 1)}
             >
-              Clear filters
+              Previous
             </button>
-          )}
-        </div>
-      )}
+            <button
+              className="button secondary"
+              disabled={
+                page * inbox.data.pageSize >= inbox.data.total ||
+                inbox.isFetching
+              }
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </button>
+          </nav>
+        )}
     </div>
   );
 }
@@ -323,9 +382,12 @@ function ProjectSettings({ project }: { project: ProjectView }) {
           Archive project
         </h2>
         <p className="body-copy">
-          Archiving removes the project from discovery and closes recruitment.
-          Applications, roles, and memberships stay available in this read-only
-          dashboard. Restoration is not available in this milestone.
+          Archiving removes the project from discovery and closes recruitment.{" "}
+          {API_MODE
+            ? "Applications, roles, and memberships"
+            : "Applications, roles, and memberships"}{" "}
+          stay available in this read-only dashboard. Restoration is not
+          available in this milestone.
         </p>
         <button
           className="button danger-secondary"
@@ -352,7 +414,11 @@ function ProjectSettings({ project }: { project: ProjectView }) {
         open={confirm && project.status !== "archived"}
         onOpenChange={setConfirm}
         title="Archive this project?"
-        description="The project will disappear from discovery. Recruitment and application decisions will be disabled. This cannot be undone in this prototype."
+        description={
+          API_MODE
+            ? "The project will disappear from discovery and recruitment will close. Applications, roles, and memberships remain available. Restoration is not available."
+            : "The project will disappear from discovery. Recruitment and application decisions will be disabled. This cannot be undone in this prototype."
+        }
         confirmLabel="Confirm archive"
         pending={archive.isPending}
         error={archive.isError ? archive.error.message : undefined}
@@ -379,6 +445,7 @@ export function OwnerDashboard({
 }) {
   const query = useOwnerDashboard(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedQuery = useOwnerApplication(projectId, selectedId);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const heading = useRef<HTMLHeadingElement | null>(null);
   if (query.isPending)
@@ -394,9 +461,11 @@ export function OwnerDashboard({
     );
   const data = query.data;
   const project = data.project;
-  const selected = data.applications.find(
-    (a) => a.application.id === selectedId,
-  );
+  const selected = API_MODE
+    ? selectedQuery.isError
+      ? undefined
+      : selectedQuery.data
+    : data.applications.find((a) => a.application.id === selectedId);
   const review = (id: string, el: HTMLButtonElement) => {
     trigger.current = el;
     setSelectedId(id);
@@ -467,36 +536,47 @@ export function OwnerDashboard({
               </p>
               <RecruitmentControl project={project} />
             </section>
-            <section className="space-y-4">
-              <div className="flex flex-wrap justify-between items-center gap-3">
-                <h2>Recent pending applicants</h2>
-                <Link
-                  className="text-button"
-                  href={`/projects/${projectId}/manage?tab=applications`}
-                >
-                  View inbox →
-                </Link>
-              </div>
-              {data.pendingCount ? (
-                data.applications
-                  .filter((a) => a.application.status === "pending")
-                  .slice(0, 3)
-                  .map((entry) => (
-                    <ApplicantRow
-                      key={entry.application.id}
-                      entry={entry}
-                      onReview={(el) => review(entry.application.id, el)}
-                    />
-                  ))
-              ) : (
-                <div className="panel helper">
-                  No pending applications to review.
+            {
+              <section className="space-y-4">
+                <div className="flex flex-wrap justify-between items-center gap-3">
+                  <h2>Recent pending applicants</h2>
+                  <Link
+                    className="text-button"
+                    href={`/projects/${projectId}/manage?tab=applications`}
+                  >
+                    View inbox →
+                  </Link>
                 </div>
-              )}
-            </section>
+                {data.pendingCount ? (
+                  data.applications
+                    .filter((a) => a.application.status === "pending")
+                    .slice(0, 3)
+                    .map((entry) => (
+                      <ApplicantRow
+                        key={entry.application.id}
+                        entry={entry}
+                        onReview={(el) => review(entry.application.id, el)}
+                      />
+                    ))
+                ) : (
+                  <div className="panel helper">
+                    No pending applications to review.
+                  </div>
+                )}
+              </section>
+            }
           </div>
           <RoleOccupancy project={project} />
         </div>
+      )}
+      {API_MODE && selectedId && selectedQuery.isPending && (
+        <Loading label="Loading application review…" />
+      )}
+      {API_MODE && selectedId && selectedQuery.isError && (
+        <ErrorState
+          error={selectedQuery.error}
+          retry={() => void selectedQuery.refetch()}
+        />
       )}
       {selected && (
         <ApplicationReview

@@ -1,8 +1,14 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  apiProfileFormSchema,
+  type ProfileFormValues,
+} from "@/lib/api-contract";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
 import {
   Check,
   Code2,
@@ -13,7 +19,7 @@ import {
   UserRoundPen,
 } from "lucide-react";
 import { useSaveProfile, useSession } from "@/lib/queries";
-import { profileSchema, type ProfileInput } from "@/lib/validation";
+import { profileSchema } from "@/lib/validation";
 import type { ProjectView, Skill, Student } from "@/lib/models";
 import {
   Badge,
@@ -118,8 +124,21 @@ function ProfileSummary({
     </div>
   );
 }
-function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
-  const mutation = useSaveProfile();
+export function ProfileForm({
+  initialValues,
+  skills,
+  onSave,
+  real = false,
+}: {
+  initialValues: ProfileFormValues;
+  skills: Skill[];
+  onSave: (values: ProfileFormValues) => Promise<ProfileFormValues>;
+  real?: boolean;
+}) {
+  const mutation = useMutation({ mutationFn: onSave });
+  const schema: z.ZodType<ProfileFormValues, ProfileFormValues> = real
+    ? apiProfileFormSchema
+    : profileSchema;
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
   const {
@@ -129,9 +148,9 @@ function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
     setValue,
     reset,
     formState: { errors, isDirty },
-  } = useForm<ProfileInput>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: profileSchema.parse(student),
+  } = useForm<ProfileFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: initialValues,
   });
   const selected = useWatch({ control, name: "skillIds" });
   const bio = useWatch({ control, name: "bio" });
@@ -149,7 +168,7 @@ function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
     setNotice("");
     mutation.mutate(values, {
       onSuccess: (saved) => {
-        reset(profileSchema.parse(saved));
+        reset(saved);
         setNotice(
           "Profile saved. Your changes are now available across CampusCollab.",
         );
@@ -221,6 +240,7 @@ function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
                 aria-invalid={!!errors.semester}
                 aria-describedby="semester-error"
               >
+                {real && <option value="">Not specified</option>}
                 {Array.from({ length: 8 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
                     Semester {i + 1}
@@ -372,7 +392,7 @@ function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
               type="button"
               disabled={!isDirty || mutation.isPending}
               onClick={() => {
-                reset(profileSchema.parse(student));
+                reset(initialValues);
                 mutation.reset();
                 setSearch("");
                 setNotice("Changes discarded.");
@@ -396,6 +416,7 @@ function Editor({ student, skills }: { student: Student; skills: Skill[] }) {
 }
 export function ProfileEditor() {
   const query = useSession();
+  const saveProfile = useSaveProfile();
   if (query.isPending) return <Loading label="Loading your student profile…" />;
   if (query.isError)
     return (
@@ -409,7 +430,15 @@ export function ProfileEditor() {
       </div>
       <div className="profile-grid">
         <ProfileSummary {...query.data} />
-        <Editor student={query.data.student} skills={query.data.skills} />
+        <ProfileForm
+          initialValues={profileSchema.parse(query.data.student)}
+          skills={query.data.skills}
+          onSave={async (values) =>
+            profileSchema.parse(
+              await saveProfile.mutateAsync(profileSchema.parse(values)),
+            )
+          }
+        />
       </div>
     </div>
   );

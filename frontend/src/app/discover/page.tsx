@@ -1,4 +1,5 @@
 "use client";
+import { API_MODE } from "@/lib/app-mode";
 import { useState } from "react";
 import { Search, X, Compass } from "lucide-react";
 import { useDiscovery } from "@/lib/queries";
@@ -8,11 +9,15 @@ import { ProjectCard } from "@/components/project-card";
 import { Badge, ErrorState, Loading } from "@/components/ui";
 export default function Discover() {
   const [filters, setFilters] = useState<DiscoveryFilters>(defaultFilters);
-  const query = useDiscovery(filters);
+  const [page, setPage] = useState(1);
+  const query = useDiscovery(filters, page);
   const update = <K extends keyof DiscoveryFilters>(
     key: K,
     value: DiscoveryFilters[K],
-  ) => setFilters((old) => ({ ...old, [key]: value }));
+  ) => {
+    setPage(1);
+    setFilters((old) => ({ ...old, [key]: value }));
+  };
   const options = [
     {
       key: "type" as const,
@@ -151,7 +156,10 @@ export default function Discover() {
             )}
             <button
               className="text-button"
-              onClick={() => setFilters(defaultFilters)}
+              onClick={() => {
+                setPage(1);
+                setFilters(defaultFilters);
+              }}
             >
               Reset filters
             </button>
@@ -168,7 +176,10 @@ export default function Discover() {
                 : "Finding projects…"}
           </strong>
           {query.data && (
-            <span className="muted"> from {query.data.total} total</span>
+            <span className="muted">
+              {" "}
+              from {query.data.total} {API_MODE ? "matching projects" : "total"}
+            </span>
           )}
         </p>
         <label>
@@ -201,14 +212,45 @@ export default function Discover() {
         <div className="state-panel">
           <Compass size={32} />
           <h2>No projects match just yet</h2>
-          <p>Try another skill, a broader search, or clear your filters.</p>
+          <p>
+            {API_MODE && !active
+              ? "No published projects yet. Create a project to start building your team."
+              : "Try another skill, a broader search, or clear your filters."}
+          </p>
           <button
             className="button secondary"
-            onClick={() => setFilters(defaultFilters)}
+            onClick={() => {
+              setPage(1);
+              setFilters(defaultFilters);
+            }}
           >
             Reset filters
           </button>
         </div>
+      )}
+      {API_MODE && query.data && (
+        <nav
+          className="flex items-center justify-center gap-4"
+          aria-label="Project pages"
+        >
+          <button
+            className="button secondary"
+            disabled={page === 1 || query.isFetching}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            Previous page
+          </button>
+          <span>
+            Page {page} of {Math.max(1, Math.ceil(query.data.total / 12))}
+          </span>
+          <button
+            className="button secondary"
+            disabled={page * 12 >= query.data.total || query.isFetching}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next page
+          </button>
+        </nav>
       )}
     </div>
   );

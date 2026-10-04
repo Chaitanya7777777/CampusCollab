@@ -39,6 +39,7 @@ export default defineConfig({
     },
   ],
   webServer: {
+    env: { NEXT_PUBLIC_APP_MODE: "mock", NEXT_DIST_DIR: ".next" },
     command: "npm run dev -- --hostname 127.0.0.1",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,

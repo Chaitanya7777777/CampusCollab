@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { API_MODE } from "@/lib/app-mode";
 import { useRef, useState } from "react";
 import {
   CheckCircle2,
@@ -124,7 +125,7 @@ export function ProjectDetails({ projectId }: { projectId: string }) {
             <div className="flex flex-wrap gap-2">
               <Badge tone={project.openings ? "teal" : "muted"}>
                 {project.openings
-                  ? `Open for applications (${project.openings} positions)`
+                  ? `${API_MODE ? "Recruitment open" : "Open for applications"} (${project.openings} positions)`
                   : "Recruitment closed"}
               </Badge>
               <Badge>{project.type}</Badge>
@@ -160,20 +161,22 @@ export function ProjectDetails({ projectId }: { projectId: string }) {
               Problem Statement & Solution Scope
             </h2>
             <p className="body-copy">{project.description}</p>
-            <div>
-              <p className="eyebrow mb-3">Core project deliverables</p>
-              <div className="deliverables-grid">
-                {project.deliverables.map((d) => (
-                  <div key={d.title} className="inset-panel">
-                    <h3>
-                      <CheckCircle2 size={17} />
-                      {d.title}
-                    </h3>
-                    <p>{d.description}</p>
-                  </div>
-                ))}
+            {project.deliverables.length > 0 && (
+              <div>
+                <p className="eyebrow mb-3">Core project deliverables</p>
+                <div className="deliverables-grid">
+                  {project.deliverables.map((d) => (
+                    <div key={d.title} className="inset-panel">
+                      <h3>
+                        <CheckCircle2 size={17} />
+                        {d.title}
+                      </h3>
+                      <p>{d.description}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <p className="eyebrow mb-3">Project skills</p>
               <Skills skills={project.skills} />

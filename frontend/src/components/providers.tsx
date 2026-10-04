@@ -13,6 +13,8 @@ import {
 import { getActor, loadIdentity, subscribeIdentity } from "@/lib/demo-identity";
 import { CURRENT_STUDENT_ID } from "@/lib/seed";
 import { STORAGE_KEY } from "@/lib/mock-api";
+import { API_MODE } from "@/lib/app-mode";
+import { ApiProviders } from "./api-auth";
 function StorageSync() {
   const client = useQueryClient();
   useEffect(() => {
@@ -49,6 +51,13 @@ function IdentityQueries({ children }: { children: ReactNode }) {
   );
 }
 export function Providers({ children }: { children: ReactNode }) {
+  return API_MODE ? (
+    <ApiProviders>{children}</ApiProviders>
+  ) : (
+    <MockProviders>{children}</MockProviders>
+  );
+}
+function MockProviders({ children }: { children: ReactNode }) {
   const actor = useSyncExternalStore(
     subscribeIdentity,
     getActor,

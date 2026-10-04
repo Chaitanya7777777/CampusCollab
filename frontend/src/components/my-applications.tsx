@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { API_MODE } from "@/lib/app-mode";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useRef, useState } from "react";
 import {
@@ -254,8 +255,13 @@ function ApplicationDetails({
   );
 }
 export function MyApplications() {
-  const [filters, setFilters] = useState(defaultApplicationFilters);
-  const query = useMyApplications(filters);
+  const [filters, updateFilters] = useState(defaultApplicationFilters);
+  const [page, setPage] = useState(1);
+  const setFilters = (value: typeof filters) => {
+    updateFilters(value);
+    setPage(1);
+  };
+  const query = useMyApplications(filters, page);
   const [selected, setSelected] = useState<{
     id: string;
     withdraw: boolean;
@@ -391,7 +397,9 @@ export function MyApplications() {
       <p className="helper" role="status">
         {query.isFetching
           ? "Updating results…"
-          : `${applications.length} of ${counts.all} applications shown`}
+          : API_MODE
+            ? `${query.data.total} of ${counts.all} applications match · Page ${page}`
+            : `${applications.length} of ${counts.all} applications shown`}
       </p>
       {applications.length ? (
         <div aria-busy={query.isFetching}>
@@ -467,6 +475,26 @@ export function MyApplications() {
             </Link>
           )}
         </div>
+      )}
+      {API_MODE && (page > 1 || query.data.total > query.data.pageSize) && (
+        <nav aria-label="Application pages" className="flex gap-3">
+          <button
+            className="button secondary"
+            disabled={page === 1 || query.isFetching}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </button>
+          <button
+            className="button secondary"
+            disabled={
+              page * query.data.pageSize >= query.data.total || query.isFetching
+            }
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </button>
+        </nav>
       )}
       {selected && (
         <ApplicationDetails

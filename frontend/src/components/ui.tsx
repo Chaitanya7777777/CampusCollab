@@ -95,13 +95,20 @@ export function StudentSummary({
       <Avatar name={student.name} large={!compact} />
       <div className="min-w-0">
         <strong>{student.name}</strong>
-        <p>
-          <GraduationCap size={14} />
-          {student.campus}
-        </p>
-        {!compact && (
+        {student.campus && (
           <p>
-            {student.department} · Semester {student.semester}
+            <GraduationCap size={14} />
+            {student.campus}
+          </p>
+        )}
+        {!compact && (student.department || student.semester) && (
+          <p>
+            {[
+              student.department,
+              student.semester ? `Semester ${student.semester}` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         )}
       </div>
