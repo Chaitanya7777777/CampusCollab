@@ -1,4 +1,4 @@
-# Real authentication and profiles
+# Frontend API mode
 
 `NEXT_PUBLIC_APP_MODE=mock` (default) preserves the complete fictional project/team prototype. `NEXT_PUBLIC_APP_MODE=api` selects real FastAPI sessions, profiles, catalog skills, projects, applications and team formation. Modes do not import or merge each other's identities, applications or memberships. These public variables are bundled by Next.js: restart development after changing them, and rebuild production output.
 
@@ -63,7 +63,7 @@ npm.cmd run test:api
 
 POSIX: export these two variables, then `cd frontend && npm run test:api`. Reuse the pinned backend virtual environment. Tests use installed Google Chrome like the existing suite. API traces are disabled to avoid saving credentials/tokens; explicit screenshots cover profile and public/authentication layouts under ignored test output. Password fields are masked before authentication screenshots. Run the mock and API browser suites sequentially because they share the test-results directory.
 
-Other checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e` (mock suite), `npm run build`. Keep the mock suite in mock mode. Run production builds separately for each desired mode. Actual results are recorded in the root README.
+Other checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e` (mock suite), `npm run build`. Stop any existing server on port 3000 before the mock suite so Playwright cannot reuse an API-mode instance. Run production builds separately for each desired mode, with development servers sharing their output directory stopped. Dated results are recorded under Application milestone verification below.
 
 ## Manual walkthrough
 

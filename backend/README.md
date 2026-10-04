@@ -1,10 +1,10 @@
-# Backend foundation
+# CampusCollab backend
 
 Verified against real local PostgreSQL on **2026-10-02**: both Compose services healthy; development migration head **0001_identity**; two explicit seed runs produced identical **28 skills and stable IDs**. The complete suite passed **24 tests (15 Python-only + 9 PostgreSQL integration), 0 skips**, plus Ruff lint/format and pip dependency checks. Guards remained unchanged. A Windows pytest cache-write issue required a fresh temporary cache via `-o cache_dir=<temporary-directory>`; no backend implementation changes were needed.
 
 The live HTTP walkthrough passed: liveness/readiness, CSRF bootstrap, registration/current identity, profile and skill persistence, logout/401, login with saved profile, final logout/401, and missing-CSRF rejection/403. Existing `.env` and development data were preserved. One unique fictional verification account remains; both databases remain running, and only the temporary verification API server was stopped. Frontend authentication/profile integration is now implemented in API mode; production hardening remains deferred.
 
-FastAPI serves the frontend's explicit API mode for authentication, profiles, skills and projects. Mock mode remains separate; no browser storage or fictional accounts are imported. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
+FastAPI serves the frontend's explicit API mode for authentication, profiles, skills, projects, applications and team formation. Mock mode remains separate; no browser storage or fictional accounts are imported. The current migration head is `0003_applications`; the dated verification records describe earlier milestones as well as the latest application milestone. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
 
 ## Frontend integration verification
 
@@ -20,7 +20,7 @@ PowerShell, from the repository root:
 docker compose up -d --wait postgres
 python -m venv backend/.venv
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
-Copy-Item backend/.env.example backend/.env
+if (-not (Test-Path backend/.env)) { Copy-Item backend/.env.example backend/.env }
 backend/.venv/Scripts/python.exe -c "import secrets; print(secrets.token_urlsafe(48))"
 # Set CSRF_SECRET in backend/.env to the generated value.
 cd backend
@@ -35,7 +35,7 @@ POSIX, from the repository root:
 docker compose up -d --wait postgres
 python3 -m venv backend/.venv
 backend/.venv/bin/python -m pip install -r backend/requirements.txt
-cp backend/.env.example backend/.env
+test -f backend/.env || cp backend/.env.example backend/.env
 backend/.venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(48))'
 # Set CSRF_SECRET in backend/.env to the generated value.
 cd backend
@@ -125,7 +125,7 @@ POSIX: export the same variables with `export TEST_DATABASE_URL='...'` and `expo
 
 The guard requires localhost port 5433, database AND role `campuscollab_test`, explicit reset consent, no connection-query overrides, and a URL distinct from the development URL in the environment or `.env` (including localhost aliases). It also checks the connected database/role before dropping the test public schema. Each integration test migrates an empty schema using Alembic and seeds skills. The test service uses ephemeral tmpfs, not the development volume. Do not run suites concurrently against the same test database. Reset fixtures and the API browser server share a PostgreSQL advisory lock and fail closed if the other suite is active. There is no SQLite fallback. Missing TEST_DATABASE_URL causes explicit skips; invalid configuration or an unavailable configured database fails.
 
-Tests cover schema/model parity, seed idempotence, concurrent duplicate registration, password/session privacy, login/logout/expiry, CSRF, profile persistence, identity isolation, invalid-skill atomicity and transaction failures. Python-only checks run with `python -m pytest -m 'not integration'`. Actual results and environment blockers are recorded in the root README.
+Tests cover schema/model parity, seed idempotence, concurrent duplicate registration, password/session privacy, login/logout/expiry, CSRF, profile persistence, identity isolation, invalid-skill atomicity and transaction failures. Python-only checks run with `python -m pytest -m 'not integration'`. Dated results and environment notes are recorded in the verification sections of this guide.
 
 ## Files and request flow
 
