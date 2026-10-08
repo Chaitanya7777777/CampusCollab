@@ -12,7 +12,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Application, Project, ProjectMember, ProjectRole
-from tests.conftest import register, unsafe
+from tests.conftest import unsafe
+from tests.conftest import verified_register as register
 from tests.test_projects import create, login_as, values
 
 pytestmark = pytest.mark.integration

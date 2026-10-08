@@ -1,10 +1,12 @@
 # Frontend API mode
 
+Converted seeded projects use ordinary cards, the actual account owner's profile, and the complete application/review workflow. Conversion requires an explicitly selected existing verified owner; no fictional account is login-enabled. See [local conversion and maintenance](../backend/SAMPLE_PROJECTS.md). Mock mode remains independent.
+
 `NEXT_PUBLIC_APP_MODE=mock` (default) preserves the complete fictional project/team prototype. `NEXT_PUBLIC_APP_MODE=api` selects real FastAPI sessions, profiles, catalog skills, projects, applications and team formation. Modes do not import or merge each other's identities, applications or memberships. These public variables are bundled by Next.js: restart development after changing them, and rebuild production output.
 
 ## Local startup
 
-From the repository root, start PostgreSQL with `docker compose up -d --wait postgres`. Follow [backend setup](../backend/README.md) to create the virtual environment and configure `backend/.env` if needed; preserve existing files and generate a secret if starting fresh.
+From the repository root, start PostgreSQL with `docker compose up -d --wait postgres mailpit`. Follow [backend setup](../backend/README.md) to create the virtual environment and configure `backend/.env` if needed; preserve existing files and generate a secret if starting fresh.
 
 In terminal 1 (PowerShell):
 
@@ -12,7 +14,7 @@ In terminal 1 (PowerShell):
 cd backend
 .venv/Scripts/python.exe -m alembic upgrade head
 .venv/Scripts/python.exe -m app.skills
-.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log
+.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log --no-proxy-headers
 ```
 
 In terminal 2:
@@ -33,7 +35,7 @@ Mock mode: set `NEXT_PUBLIC_APP_MODE=mock` and restart Next.js. Its existing bro
 
 Open `/` for the public landing page; it no longer redirects automatically. API-mode visitors see Log in/Create account only after session restoration, or Open CampusCollab to `/profile` when signed in. Authenticated visitors may continue browsing the landing page; `/login` and `/signup` retain their redirect to `/profile`. Account restoration errors offer Retry without a mock fallback. Mock-mode public pages offer Open Demo to `/discover` without simulating credential authentication. Static project illustrations are not live results.
 
-Login/signup retain backend validation and add independent password visibility controls, correct autocomplete, and keyboard submission. No backend security or database behavior changed.
+Login/signup retain backend validation and add independent password visibility controls, correct autocomplete, and keyboard submission. The original presentation-only milestone preserved backend behavior; subsequent authentication protections are documented below.
 
 ## Behavior and implementation
 
@@ -54,7 +56,7 @@ The test runner starts its own API at localhost:8100 and Next.js API mode at loc
 PowerShell, from root:
 
 ```powershell
-docker compose --profile test up -d --wait postgres-test
+docker compose --profile test up -d --wait postgres-test mailpit
 $env:TEST_DATABASE_URL = 'postgresql+asyncpg://campuscollab_test:local_test_only@127.0.0.1:5433/campuscollab_test'
 $env:ALLOW_TEST_DB_RESET = 'campuscollab_test'
 cd frontend
@@ -73,7 +75,7 @@ Other checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e
 4. Log in with the same credentials. Confirm saved profile/skills and updated name remain.
 5. Log out and register another account; it starts without the previous account's information. Project actions use only that real account and its permissions.
 
-Deferred: email verification, password recovery, rate limiting and production operational hardening. The complete application workflow remains separately available in mock mode.
+Email verification, password recovery and rate limiting are now implemented; production operational hardening remains. The complete application workflow remains separately available in mock mode.
 
 ## Executed validation
 
@@ -119,7 +121,7 @@ API mode now enables the existing application dialog, My Applications, owner App
 
 Applicant history and inbox use server-side 12-item pages, with bounded API page sizes. Status counts are global to the current user/project, while the displayed match count is independent of the current page. Reads and mutations never use mock applications in API mode. Project/applicant/inbox/roster/discovery/My Projects/profile-summary queries are invalidated after decisions. Session-scoped caches are cleared on account changes; navigation, explicit reload and window focus refresh other sessions. API synchronization does not use browser-storage events. Open stale reviews refresh after conflicts; mutations are never automatically replayed after an ambiguous network failure.
 
-Remaining: email verification/password recovery, throttling and production operational hardening; published-project editing, archive restoration, invitations, member removal and ownership transfer. No notification/email delivery, chat, Redis, WebSockets or AI was added. Mock authorization remains prototype behavior, while API permissions are enforced by the session-derived backend actor.
+Remaining: production operational hardening; published-project editing, archive restoration, invitations, member removal and ownership transfer. Account email verification/recovery and authentication rate limits are now implemented. Notifications, chat, Redis, WebSockets and AI remain outside scope. Mock authorization remains prototype behavior, while API permissions are enforced by the session-derived backend actor.
 
 
 ## Application milestone verification - 2026-10-04
@@ -132,3 +134,13 @@ Remaining: email verification/password recovery, throttling and production opera
 - Production builds passed in **both mock and API modes**. The development database is at **0003_applications (head)** after an additive migration; no development database reset or browser-storage import occurred. Test fixtures used only the guarded dedicated database and ran sequentially with the API browser server.
 
 No environment blockers remain. The local real application/team workflow is implemented; production hardening and the deferred features listed above remain. No commit or push was performed.
+
+## Recovery and email verification
+
+API mode adds public `/forgot-password`, `/reset-password` and `/verify-email` routes, a login recovery link and an account verification/resend banner. Mock mode offers Open Demo and sends no email. Registration is now two-stage: Send verification code, then Verify and create account. No account/session exists before code confirmation; failed delivery leaves a recoverable pending flow. See [signup code setup and contract](../backend/SIGNUP_CODES.md). Confirm the email before publishing or submitting new applications; drafts, profile edits and existing owner decisions remain available. Existing accounts are not automatically verified.
+
+Token links use fragments, are read only into memory, and are removed from the visible URL. GET navigation has no account-changing side effects; users explicitly confirm verification or submit a new password. Token pages send `Referrer-Policy: no-referrer`. Password reset revokes all sessions and refreshes authentication state; verification never switches identity. A reload needs the email link again. 429 shows Retry-After guidance; invalid/expired links offer recovery and no mutation is automatically replayed.
+
+Start Mailpit with `docker compose up -d --wait mailpit` and open http://localhost:8025. The guarded real browser suite now uses local SMTP mail for verification before publishing/applying, and reset/re-login workflows. Keep API traces, video and screenshots disabled for token steps. See [authentication configuration and walkthrough](../backend/AUTHENTICATION.md). Production SMTP delivery is not configured or claimed.
+
+Authentication protection verification (2026-10-06): lint/typecheck, 52 unit tests, 20 real API browser tests and 29 mock browser tests passed with no skips. Both production modes built successfully. Four focused recovery checks passed after the final verified-account messaging update; these also check the token-page Referrer-Policy and mobile overflow. Only empty, token-free recovery forms were captured for visual inspection. Full backend results and local setup limitations are recorded in [the authentication guide](../backend/AUTHENTICATION.md#executed-validation--2026-10-06).

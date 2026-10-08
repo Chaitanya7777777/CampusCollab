@@ -123,8 +123,9 @@ export function AuthFrame({
           <div className="auth-note">
             <Info size={21} />
             <p>
-              Start with your profile. Real accounts support profiles and skills
-              today. Team formation is available in the separate mock demo.
+                Start with your profile and verify your email. Publish projects,
+                apply for roles, and form teams with real accounts. A separate
+                mock demo is also available.
             </p>
           </div>
         </aside>

@@ -1,3 +1,4 @@
+import { completeSignup } from "./mail";
 import {
   test,
   expect,
@@ -7,17 +8,17 @@ import {
 import { randomUUID } from "node:crypto";
 
 async function signup(page: Page, name: string) {
+  const email = `team-${randomUUID()}@example.com`;
   await page.goto("/signup");
   await page.getByLabel("Full name").fill(name);
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill(`team-${randomUUID()}@example.com`);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   const password = `fictional-${randomUUID()}`;
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByLabel("Confirm password", { exact: true }).fill(password);
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
+  await completeSignup(page, email);
   await expect(page).toHaveURL(/\/profile$/);
 }
 async function mutate(

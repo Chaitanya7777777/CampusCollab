@@ -1,0 +1,260 @@
+import { completeSignup } from "./mail";
+import { test, expect, type Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+
+async function signup(page: Page, name: string) {
+  const email = `team-${randomUUID()}@example.com`;
+  await page.goto("/signup");
+  await page.getByLabel("Full name").fill(name);
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  const password = `fictional-${randomUUID()}`;
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByLabel("Confirm password", { exact: true }).fill(password);
+  await page
+    .getByRole("button", { name: "Send verification code", exact: true })
+    .click();
+  await completeSignup(page, email);
+  await expect(page).toHaveURL(/\/profile$/);
+}
+test("converted projects use normal cards, owner review and real team formation", async ({
+  page,
+  browser,
+}) => {
+  test.setTimeout(120000);
+  await page.goto("/login");
+  await page
+    .getByLabel("Email", { exact: true })
+    .fill(process.env.CONVERSION_TEST_EMAIL!);
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill(process.env.CONVERSION_TEST_PASSWORD!);
+  await page.getByRole("button", { name: "Log in", exact: true }).click();
+  await expect(page).toHaveURL(/\/profile$/);
+  const title =
+    test.info().project.name === "api-mobile"
+      ? "Study Circle Planner"
+      : "WasteWise Campus";
+  await page.goto("/discover");
+  await page.getByPlaceholder(/Search/i).fill(title);
+  const card = page.getByTestId("project-card").filter({ hasText: title });
+  await expect(card).toContainText("Recruitment Owner");
+  await expect(card.getByText("Sample project", { exact: true })).toHaveCount(
+    0,
+  );
+  await page.screenshot({
+    path: test.info().outputPath("converted-discovery.png"),
+    fullPage: true,
+  });
+  await card.getByRole("link", { name: `View project: ${title}` }).click();
+  await expect(
+    page.getByRole("region", { name: "About this sample" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Create a real project" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Manage Project" }),
+  ).toBeVisible();
+  const id = new URL(page.url()).pathname.split("/").at(-1)!;
+  await page.screenshot({
+    path: test.info().outputPath("converted-owner-detail.png"),
+    fullPage: true,
+  });
+  for (const action of ["accept", "reject", "withdraw"] as const) {
+    const context = await browser.newContext({
+      baseURL: "http://localhost:3100",
+      viewport: page.viewportSize()!,
+    });
+    const applicant = await context.newPage();
+    try {
+      await signup(applicant, `${action} Student`);
+      await applicant.goto(`/projects/${id}`);
+      if (action === "accept") {
+        await expect(
+          applicant
+            .getByRole("button", { name: "Apply for this role" })
+            .first(),
+        ).toBeEnabled();
+        await applicant.screenshot({
+          path: test.info().outputPath("converted-applicant-detail.png"),
+          fullPage: true,
+        });
+      }
+      await applicant
+        .getByRole("button", { name: "Apply for this role" })
+        .first()
+        .click();
+      await applicant
+        .getByLabel("Why would you like to join this project?")
+        .fill(
+          "I want to contribute to this campus project and learn from working together with the team.",
+        );
+      await applicant
+        .getByLabel("Relevant experience & projects")
+        .fill(
+          "I have completed coursework and built several useful student projects.",
+        );
+      await applicant
+        .getByRole("button", { name: "Submit application", exact: true })
+        .click();
+      await expect(
+        applicant.getByRole("heading", { name: "Application submitted!" }),
+      ).toBeVisible();
+      await applicant
+        .getByRole("dialog")
+        .getByRole("link", { name: "My Applications", exact: true })
+        .click();
+      await expect(
+        applicant.getByRole("button", { name: "Pending (1)", exact: true }),
+      ).toBeVisible();
+      const search = applicant.getByLabel(
+        "Search applications by project or role",
+      );
+      await search.pressSequentially("nomatch", { delay: 50 });
+      await expect(search).toHaveValue("nomatch");
+      await expect(
+        applicant.getByRole("heading", { name: "No matching applications" }),
+      ).toBeVisible();
+      await expect(
+        applicant.getByRole("button", { name: "Pending (1)", exact: true }),
+      ).toBeVisible();
+      await search.fill("");
+      await expect(
+        applicant.getByText(title, { exact: true }).filter({ visible: true }),
+      ).toBeVisible();
+      if (action === "withdraw") {
+        await applicant
+          .getByRole("button", { name: "Withdraw", exact: true })
+          .filter({ visible: true })
+          .click();
+        await expect(
+          applicant.getByRole("dialog", { name: "Withdraw this application?" }),
+        ).toBeVisible();
+        await applicant
+          .getByRole("button", { name: "Confirm withdrawal", exact: true })
+          .click();
+        await expect(
+          applicant.getByText(
+            "Application withdrawn. Reapplication to this project is unavailable.",
+          ),
+        ).toBeVisible();
+        await applicant
+          .getByRole("button", { name: "Close application details" })
+          .click();
+      }
+      await page.goto(`/projects/${id}/manage?tab=applications`);
+      if (action === "withdraw")
+        await page
+          .getByRole("button", { name: "Withdrawn (1)", exact: true })
+          .click();
+      await page
+        .getByRole("button", { name: `Review ${action} Student`, exact: true })
+        .click();
+      const panel = page.getByRole("dialog", {
+        name: `${action} Student`,
+        exact: true,
+      });
+      await expect(panel).toBeVisible();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > innerWidth,
+        ),
+      ).toBe(false);
+      if (action === "withdraw") {
+        await expect(
+          panel.getByRole("button", { name: "Accept Teammate" }),
+        ).toHaveCount(0);
+      } else {
+        await panel
+          .getByRole("button", {
+            name: action === "accept" ? "Accept Teammate" : "Reject",
+            exact: true,
+          })
+          .click();
+        const confirmation = page.getByRole("button", {
+          name:
+            action === "accept" ? "Confirm acceptance" : "Confirm rejection",
+          exact: true,
+        });
+        await confirmation.focus();
+        await page.keyboard.press("Enter");
+        await expect(
+          panel.getByText(
+            `This application is ${action === "accept" ? "accepted" : "rejected"}`,
+            { exact: false },
+          ),
+        ).toBeVisible();
+      }
+      await panel.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+      const bounds = await panel.boundingBox();
+      expect(bounds!.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+      expect(bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      await page.screenshot({
+        path: test.info().outputPath(`review-${action}.png`),
+        fullPage: false,
+      });
+      await page.keyboard.press("Escape");
+      await applicant.reload();
+      await expect(
+        applicant.getByRole("button", {
+          name: `${action === "accept" ? "Accepted" : action === "reject" ? "Rejected" : "Withdrawn"} (1)`,
+          exact: true,
+        }),
+      ).toBeVisible();
+      if (action === "accept") {
+        await applicant
+          .getByRole("link", { name: "View Team", exact: true })
+          .filter({ visible: true })
+          .click();
+        await expect(
+          applicant.getByText("Application accepted", { exact: true }),
+        ).toBeVisible();
+        const detail = await applicant.request.get(
+          `http://localhost:8100/api/v1/projects/${id}`,
+        );
+        const project = await detail.json();
+        expect(project.memberCount).toBe(2);
+        expect(project.openings).toBe(1);
+        expect(
+          project.roles.filter(
+            (role: { openings: number }) => role.openings === 0,
+          ),
+        ).toHaveLength(1);
+        await applicant.goto("/my-projects");
+        await applicant
+          .getByRole("button", { name: /Joined projects/ })
+          .click();
+        await expect(
+          applicant.getByRole("heading", { name: title }),
+        ).toBeVisible();
+      }
+    } finally {
+      await context.close();
+    }
+  }
+  await page.goto(`/projects/${id}/manage?tab=team`);
+  await expect(
+    page.getByRole("heading", { name: "Team members (2 / 4)" }),
+  ).toBeVisible();
+  await page.goto(`/projects/${id}/manage?tab=applications`);
+  await page
+    .getByRole("button", { name: "Withdrawn (1)", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Review withdraw Student", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "withdraw Student", exact: true }),
+  ).toBeVisible();
+  const sibling = await page.context().newPage();
+  await sibling.goto("/profile");
+  await sibling.getByRole("button", { name: "Log out", exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("withdraw Student", { exact: true })).toHaveCount(
+    0,
+  );
+  await sibling.close();
+});

@@ -5,13 +5,13 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import func, select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.db import get_db
 from app.models import Profile, Session, User
-from app.schemas import CsrfOut, LoginInput, RegisterInput, UserOut
+from app.rate_limits import limit
+from app.schemas import CsrfOut, LoginInput, UserOut
 from app.security import (
     TOKEN,
     clear_cookie,
@@ -43,6 +43,7 @@ async def current_user(request: Request, db: AsyncSession = Depends(get_db)) -> 
             select(User, Session)
             .join(Session, Session.user_id == User.id)
             .where(
+                User.sample_seed.is_(None),
                 Session.token_hash == token_hash(token),
                 Session.revoked_at.is_(None),
                 Session.expires_at > func.now(),
@@ -56,7 +57,13 @@ async def current_user(request: Request, db: AsyncSession = Depends(get_db)) -> 
 
 async def user_response(db: AsyncSession, user: User) -> UserOut:
     name = await db.scalar(select(Profile.name).where(Profile.user_id == user.id))
-    return UserOut(id=user.id, name=name, email=user.email, createdAt=user.created_at)
+    return UserOut(
+        id=user.id,
+        name=name,
+        email=user.email,
+        createdAt=user.created_at,
+        emailVerifiedAt=user.email_verified_at,
+    )
 
 
 def add_session(db: AsyncSession, user: User, ttl: int) -> str:
@@ -71,23 +78,6 @@ def add_session(db: AsyncSession, user: User, ttl: int) -> str:
     return token
 
 
-async def register_user(db: AsyncSession, data: RegisterInput, ttl: int):
-    password_hash = await run_in_threadpool(hasher.hash, data.password.get_secret_value())
-    user = User(email=str(data.email), password_hash=password_hash)
-    try:
-        db.add(user)
-        await db.flush()
-        db.add(Profile(user_id=user.id, name=data.name))
-        token = add_session(db, user, ttl)
-        await db.commit()
-    except IntegrityError:
-        await db.rollback()
-        if await db.scalar(select(User.id).where(User.email == str(data.email))):
-            raise HTTPException(409, "An account with this email already exists") from None
-        raise
-    return user, token
-
-
 def verify_password(encoded: str, password: str) -> bool:
     try:
         return hasher.verify(encoded, password)
@@ -96,7 +86,11 @@ def verify_password(encoded: str, password: str) -> bool:
 
 
 async def login_user(db: AsyncSession, data: LoginInput, ttl: int):
-    user = await db.scalar(select(User).where(User.email == str(data.email)))
+    user = await db.scalar(
+        select(User)
+        .where(User.email == str(data.email), User.sample_seed.is_(None))
+        .with_for_update()
+    )
     valid = await run_in_threadpool(
         verify_password,
         user.password_hash if user else DUMMY_HASH,
@@ -114,23 +108,12 @@ async def csrf(request: Request, response: Response):
     return CsrfOut(csrfToken=csrf_bootstrap(request, response))
 
 
-@router.post(
-    "/register", status_code=201, response_model=UserOut, dependencies=[Depends(require_csrf)]
-)
-async def register(
-    data: RegisterInput, request: Request, response: Response, db: AsyncSession = Depends(get_db)
-):
-    settings = request.app.state.settings
-    user, token = await register_user(db, data, settings.session_ttl_seconds)
-    set_cookie(response, settings, settings.session_cookie, token, settings.session_ttl_seconds)
-    return await user_response(db, user)
-
-
 @router.post("/login", response_model=UserOut, dependencies=[Depends(require_csrf)])
 async def login(
     data: LoginInput, request: Request, response: Response, db: AsyncSession = Depends(get_db)
 ):
     settings = request.app.state.settings
+    await limit(request, "login", str(data.email))
     user, token = await login_user(db, data, settings.session_ttl_seconds)
     set_cookie(response, settings, settings.session_cookie, token, settings.session_ttl_seconds)
     return await user_response(db, user)
@@ -143,7 +126,10 @@ async def logout(request: Request, db: AsyncSession = Depends(get_db)):
     if TOKEN.fullmatch(token):
         await db.execute(
             update(Session)
-            .where(Session.token_hash == token_hash(token), Session.revoked_at.is_(None))
+            .where(
+                Session.token_hash == token_hash(token),
+                Session.revoked_at.is_(None),
+            )
             .values(revoked_at=func.now())
         )
         await db.commit()

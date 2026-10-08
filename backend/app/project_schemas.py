@@ -101,6 +101,7 @@ class TeamOut(BaseModel):
 
 
 class ProjectOut(BaseModel):
+    isSample: bool = False
     id: UUID
     ownerId: UUID
     title: str

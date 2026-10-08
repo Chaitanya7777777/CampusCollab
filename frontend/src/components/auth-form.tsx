@@ -4,11 +4,18 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { loginSchema, signupSchema } from "@/lib/api-contract";
 import { API_MODE } from "@/lib/app-mode";
 import { useAuth } from "./api-auth";
+import { api } from "@/lib/api-client";
+import {
+  SignupCode,
+  readSignup,
+  rememberSignup,
+  type SignupFlow,
+} from "./signup-code";
 import { FieldError } from "./ui";
 export function AuthForm({ signup = false }: { signup?: boolean }) {
   if (!API_MODE)
@@ -31,6 +38,16 @@ function RealAuthForm({ signup }: { signup: boolean }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [visible, setVisible] = useState<Record<string, boolean>>({});
+  const [pending, setPending] = useState<SignupFlow | null>(null);
+  const [restoring, setRestoring] = useState(signup);
+  useEffect(() => {
+    if (!signup) return;
+    const timer = window.setTimeout(() => {
+      setPending(readSignup());
+      setRestoring(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [signup]);
   const schema = signup
     ? signupSchema
     : loginSchema.extend({ name: z.string(), confirmPassword: z.string() });
@@ -43,6 +60,17 @@ function RealAuthForm({ signup }: { signup: boolean }) {
     resolver: zodResolver(schema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
+  if (restoring) return <p role="status">Restoring signup...</p>;
+  if (signup && pending)
+    return (
+      <SignupCode
+        initial={pending}
+        onBack={() => {
+          reset();
+          setPending(null);
+        }}
+      />
+    );
   return (
     <section className="auth-form space-y-5">
       <p className="eyebrow">Your CampusCollab account</p>
@@ -56,18 +84,18 @@ function RealAuthForm({ signup }: { signup: boolean }) {
         onSubmit={handleSubmit(async (values) => {
           setError("");
           try {
-            await auth.authenticate(
-              signup ? "register" : "login",
-              signup
-                ? {
-                    name: values.name,
-                    email: values.email,
-                    password: values.password,
-                  }
-                : { email: values.email, password: values.password },
-            );
-            reset();
-            router.replace("/profile");
+            if (signup) {
+              const result = await api.startRegistration(values);
+              reset();
+              setPending(rememberSignup(result));
+            } else {
+              await auth.authenticate("login", {
+                email: values.email,
+                password: values.password,
+              });
+              reset();
+              router.replace("/profile");
+            }
           } catch (e) {
             setError((e as Error).message);
           }
@@ -160,7 +188,7 @@ function RealAuthForm({ signup }: { signup: boolean }) {
             {isSubmitting
               ? "Please wait…"
               : signup
-                ? "Create account"
+                ? "Send verification code"
                 : "Log in"}
           </button>
         </fieldset>
@@ -170,6 +198,11 @@ function RealAuthForm({ signup }: { signup: boolean }) {
           </p>
         )}
       </form>
+      {!signup && (
+        <Link className="text-indigo-700 underline" href="/forgot-password">
+          Forgot password?
+        </Link>
+      )}
       <p>
         {signup ? "Already have an account?" : "New to CampusCollab?"}{" "}
         <Link

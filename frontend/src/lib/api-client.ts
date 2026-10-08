@@ -20,6 +20,7 @@ import type { DiscoveryFilters } from "./models";
 import type { ProjectInput } from "./validation";
 import {
   apiProfileSchema,
+  pendingRegistrationSchema,
   catalogSchema,
   userSchema,
   type ProfilePatch,
@@ -92,18 +93,38 @@ export class ApiClient {
         parsed.success && typeof parsed.data.detail === "string"
           ? parsed.data.detail
           : "";
+      const registrationMessages: Record<string, string> = {
+        incorrect_code:
+          "That code is incorrect. Enter the latest six-digit code from your email.",
+        registration_expired:
+          "This registration has expired. Start again to get a new code.",
+        registration_exhausted:
+          "Too many incorrect codes. Start again; request limits still apply.",
+        registration_closed:
+          "This registration was replaced or already used. Start again or log in.",
+        registration_unavailable:
+          "Registration cannot be completed. Try logging in or recovering your password.",
+      };
       const message =
-        response.status === 401
-          ? "Invalid email or password, or your session has expired."
-          : response.status === 409
-            ? path.startsWith("/projects") || path.startsWith("/applications")
-              ? detail || "This project changed. Refresh and try again."
-              : "An account with this email already exists. Sign in instead."
-            : response.status === 422
-              ? "Some fields were rejected. Check their format and length, then try again."
-              : response.status >= 500
-                ? "The backend is temporarily unavailable. Please try again."
-                : "The request was not permitted. Please refresh your session and try again.";
+        registrationMessages[detail] ??
+        (response.status === 429
+          ? `Too many attempts. Try again in ${Math.max(1, Math.ceil(Number(response.headers.get("Retry-After") || 900) / 60))} minute(s).`
+          : detail === "email_verification_required"
+            ? "Verify your email from your profile before publishing or applying. You can still save a draft."
+            : detail === "invalid_or_expired_link"
+              ? "This link is invalid, expired, or already used. Request a new email and use its latest link."
+              : response.status === 401
+                ? "Invalid email or password, or your session has expired."
+                : response.status === 409
+                  ? path.startsWith("/projects") ||
+                    path.startsWith("/applications")
+                    ? detail || "This project changed. Refresh and try again."
+                    : "An account with this email already exists. Sign in instead."
+                  : response.status === 422
+                    ? "Some fields were rejected. Check their format and length, then try again."
+                    : response.status >= 500
+                      ? "The backend is temporarily unavailable. Please try again."
+                      : "The request was not permitted. Please refresh your session and try again.");
       throw new ApiError(message, response.status, detail);
     }
     return data;
@@ -157,7 +178,19 @@ export class ApiClient {
       throw e;
     }
   }
-  async authenticate(action: "login" | "register", values: unknown) {
+  async startRegistration(values: unknown) {
+    return this.parse(
+      pendingRegistrationSchema,
+      await this.mutate("/auth/register", "POST", values),
+    );
+  }
+  async resendRegistration(registrationId: string) {
+    return this.parse(
+      pendingRegistrationSchema,
+      await this.mutate("/auth/register/resend", "POST", { registrationId }),
+    );
+  }
+  async authenticate(action: "login" | "register/confirm", values: unknown) {
     const user = this.parse(
       userSchema,
       await this.mutate(`/auth/${action}`, "POST", values),
@@ -172,6 +205,28 @@ export class ApiClient {
     await this.mutate("/auth/logout", "POST");
     this.reset();
     await this.bootstrap().catch(() => undefined);
+  }
+  async requestEmail(
+    purpose: "password-reset" | "verification",
+    email: string,
+  ) {
+    return this.parse(
+      z.object({ message: z.string() }),
+      await this.mutate(`/auth/${purpose}/request`, "POST", { email }),
+    );
+  }
+  async confirmEmailToken(
+    purpose: "password-reset" | "verification",
+    token: string,
+    password?: string,
+  ) {
+    return this.parse(
+      z.object({ message: z.string() }),
+      await this.mutate(`/auth/${purpose}/confirm`, "POST", {
+        token,
+        ...(password === undefined ? {} : { password }),
+      }),
+    );
   }
   async profile(signal?: AbortSignal) {
     return this.parse(

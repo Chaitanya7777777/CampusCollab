@@ -1,3 +1,4 @@
+import { completeSignup } from "./mail";
 import {
   test,
   expect,
@@ -6,17 +7,17 @@ import {
 } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 async function signup(page: Page, name: string) {
+  const email = `project-${randomUUID()}@example.com`;
   await page.goto("/signup");
   await page.getByLabel("Full name").fill(name);
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill(`project-${randomUUID()}@example.com`);
+  await page.getByLabel("Email", { exact: true }).fill(email);
   const password = `fictional-${randomUUID()}`;
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByLabel("Confirm password", { exact: true }).fill(password);
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
+  await completeSignup(page, email);
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByLabel("Full name")).toHaveValue(name);
 }
@@ -156,7 +157,9 @@ test("two real accounts: private draft, publication, discovery, owner settings a
     await page
       .getByRole("link", { name: "Manage Project", exact: true })
       .click();
-    await expect(page.getByRole("link", { name: /^Applications/ })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /^Applications/ }),
+    ).toBeVisible();
     await page.getByRole("link", { name: /^Team/ }).click();
     await expect(
       page

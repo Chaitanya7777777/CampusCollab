@@ -12,7 +12,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Profile, Project, ProjectMember, ProjectRole, RoleSkill, Session, Skill, User
-from tests.conftest import register, unsafe
+from tests.conftest import unsafe
+from tests.conftest import verified_register as register
 
 pytestmark = pytest.mark.integration
 
@@ -358,7 +359,7 @@ async def test_upgrade_existing_identity_schema_preserves_accounts_sessions_and_
         await connection.run_sync(upgrade)
         assert (
             await connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0003_applications"
+            == "0007_project_conversion"
         )
     async with database_app.state.session_factory() as db:
         after = [list(await db.scalars(select(m.id))) for m in (User, Profile, Session, Skill)]
@@ -366,7 +367,9 @@ async def test_upgrade_existing_identity_schema_preserves_accounts_sessions_and_
     profile = (await client.get("/api/v1/profiles/me")).json()
     assert profile["campus"] == "Preserved Campus" and profile["skillIds"] == ["react"]
     assert (await client.get("/api/v1/auth/me")).status_code == 200
-    assert (await create(client, publish=True)).status_code == 201
+    # Migration does not silently verify legacy accounts. Drafts remain available.
+    assert (await create(client, publish=True)).status_code == 403
+    assert (await create(client, publish=False)).status_code == 201
 
 
 async def test_has_openings_requires_both_team_and_role_capacity(client, database_app):

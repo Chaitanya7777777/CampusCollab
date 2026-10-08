@@ -26,6 +26,7 @@ async def profile_response(db: AsyncSession, user: User) -> ProfileOut:
     return ProfileOut(
         id=user.id,
         email=user.email,
+        emailVerifiedAt=user.email_verified_at,
         createdAt=user.created_at,
         updatedAt=profile.updated_at,
         skillIds=list(skills),

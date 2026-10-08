@@ -18,6 +18,50 @@ from tests.conftest import settings
 from tests.support import guard_test_database
 
 
+def test_forwarded_addresses_need_explicit_immediate_proxy_trust():
+    from types import SimpleNamespace
+
+    from starlette.requests import Request
+
+    from app.rate_limits import client_ip
+
+    config = settings()
+    request = Request(
+        {
+            "type": "http",
+            "client": ("127.0.0.1", 1234),
+            "headers": [(b"x-forwarded-for", b"192.0.2.1, 203.0.113.7")],
+            "app": SimpleNamespace(state=SimpleNamespace(settings=config)),
+        }
+    )
+    assert client_ip(request) == "127.0.0.1"
+    config.trusted_proxy_networks = ["127.0.0.1/32"]
+    assert client_ip(request) == "203.0.113.7"
+    repeated = Request(
+        {
+            **request.scope,
+            "headers": [
+                (b"x-forwarded-for", b"192.0.2.1"),
+                (b"x-forwarded-for", b"203.0.113.7"),
+            ],
+        }
+    )
+    assert client_ip(repeated) == "203.0.113.7"
+    with pytest.raises(ValidationError):
+        type(config)(**{**config.model_dump(), "trusted_proxy_networks": ["0.0.0.0/0"]})
+
+
+def test_frontend_email_link_origin_cannot_include_redirects_or_credentials():
+    for origin in (
+        "https://user:password@example.com",
+        "https://example.com/path",
+        "https://example.com#token=x",
+        "javascript:alert(1)",
+    ):
+        with pytest.raises(ValidationError):
+            type(settings())(**{**settings().model_dump(), "frontend_base_url": origin})
+
+
 def test_patch_omission_null_and_duplicates():
     assert ProfilePatch().model_dump(exclude_unset=True) == {}
     assert ProfilePatch(campus=None, skillIds=[]).model_dump(exclude_unset=True) == {

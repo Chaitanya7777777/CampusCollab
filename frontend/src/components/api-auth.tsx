@@ -19,8 +19,9 @@ type State = {
 type Auth = State & {
   busy: boolean;
   restore: () => Promise<void>;
+  refreshAccount: () => Promise<void>;
   authenticate: (
-    action: "login" | "register",
+    action: "login" | "register/confirm",
     values: unknown,
   ) => Promise<void>;
   logout: () => Promise<void>;
@@ -90,7 +91,7 @@ export function ApiProviders({ children }: { children: ReactNode }) {
     };
   }, [restore, dispose]);
   async function change(
-    action: "login" | "register" | "logout",
+    action: "login" | "register/confirm" | "logout",
     values?: unknown,
   ) {
     if (operation.current) return;
@@ -121,6 +122,10 @@ export function ApiProviders({ children }: { children: ReactNode }) {
           ...state,
           busy,
           restore,
+          refreshAccount: async () => {
+            channel.current?.postMessage("session-changed");
+            await restore();
+          },
           authenticate: (action, values) => change(action, values),
           logout: () => change("logout"),
           updateUser: (user) =>

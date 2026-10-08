@@ -1,10 +1,14 @@
 # CampusCollab backend
 
+New signup uses email codes before account creation. See [SIGNUP_CODES.md](SIGNUP_CODES.md) for endpoints, local Mailpit steps, limits and migration details.
+
+Existing seeded projects can be converted to ordinary projects owned by an existing verified account. See [conversion and maintenance](SAMPLE_PROJECTS.md) for the transactional preview/apply command and protected cleanup boundaries. Fictional seed identities remain disabled.
+
 Verified against real local PostgreSQL on **2026-10-02**: both Compose services healthy; development migration head **0001_identity**; two explicit seed runs produced identical **28 skills and stable IDs**. The complete suite passed **24 tests (15 Python-only + 9 PostgreSQL integration), 0 skips**, plus Ruff lint/format and pip dependency checks. Guards remained unchanged. A Windows pytest cache-write issue required a fresh temporary cache via `-o cache_dir=<temporary-directory>`; no backend implementation changes were needed.
 
 The live HTTP walkthrough passed: liveness/readiness, CSRF bootstrap, registration/current identity, profile and skill persistence, logout/401, login with saved profile, final logout/401, and missing-CSRF rejection/403. Existing `.env` and development data were preserved. One unique fictional verification account remains; both databases remain running, and only the temporary verification API server was stopped. Frontend authentication/profile integration is now implemented in API mode; production hardening remains deferred.
 
-FastAPI serves the frontend's explicit API mode for authentication, profiles, skills, projects, applications and team formation. Mock mode remains separate; no browser storage or fictional accounts are imported. The current migration head is `0003_applications`; the dated verification records describe earlier milestones as well as the latest application milestone. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
+FastAPI serves the frontend's explicit API mode for authentication, profiles, skills, projects, applications and team formation. Mock mode remains separate; no browser storage or fictional accounts are imported. The current migration head is `0007_project_conversion`; the dated verification records describe earlier milestones as well as the latest application milestone. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
 
 ## Frontend integration verification
 
@@ -17,7 +21,7 @@ Install Python 3.12+ (locally checked with 3.14.6) and Docker with Compose v2. C
 PowerShell, from the repository root:
 
 ```powershell
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres mailpit
 python -m venv backend/.venv
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
 if (-not (Test-Path backend/.env)) { Copy-Item backend/.env.example backend/.env }
@@ -26,13 +30,13 @@ backend/.venv/Scripts/python.exe -c "import secrets; print(secrets.token_urlsafe
 cd backend
 .venv/Scripts/python.exe -m alembic upgrade head
 .venv/Scripts/python.exe -m app.skills
-.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log
+.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log --no-proxy-headers
 ```
 
 POSIX, from the repository root:
 
 ```sh
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres mailpit
 python3 -m venv backend/.venv
 backend/.venv/bin/python -m pip install -r backend/requirements.txt
 test -f backend/.env || cp backend/.env.example backend/.env
@@ -41,7 +45,7 @@ backend/.venv/bin/python -c 'import secrets; print(secrets.token_urlsafe(48))'
 cd backend
 .venv/bin/python -m alembic upgrade head
 .venv/bin/python -m app.skills
-.venv/bin/python -m uvicorn app.main:create_app --factory --reload --no-access-log
+.venv/bin/python -m uvicorn app.main:create_app --factory --reload --no-access-log --no-proxy-headers
 ```
 
 Run backend commands from `backend/` so settings find `.env`. API schemas: `http://localhost:8000/docs`. The placeholder secret intentionally fails configuration validation. Real environment files and virtual environments are ignored. Compose credentials are local examples, not production credentials. PostgreSQL binds only to `127.0.0.1:5432`, has a health check and persists in the named `postgres_data` volume. `docker compose stop` preserves data; do not remove the volume unless deliberately resetting it.
@@ -55,7 +59,9 @@ Alembic owns schema changes; startup never creates tables. The explicit skill se
 | GET `/health/live` | Process health, no DB connection. |
 | GET `/health/ready` | DB query, generic 503 on failure. |
 | GET `/api/v1/auth/csrf` | Allowed Origin required; bootstrap cookie and JSON `csrfToken`. |
-| POST `/api/v1/auth/register` | Name/email/password; atomic user, profile and session; 201. |
+| POST `/api/v1/auth/register` | Name/email/password/confirmation; pending registration and email code only; 202. |
+| POST `/api/v1/auth/register/confirm` | Registration ID/code; atomic verified user, profile and session; 201. |
+| POST `/api/v1/auth/register/resend` | Registration ID; controlled code resend; 200 metadata. |
 | POST `/api/v1/auth/login` | Email/password; new session; generic incorrect-credentials 401. |
 | POST `/api/v1/auth/logout` | Revokes this session and clears cookies; repeat-safe 204 with valid CSRF. |
 | GET `/api/v1/auth/me` | Session-derived user ID, name, email, createdAt. |
@@ -68,7 +74,7 @@ Every unsafe request, including registration/login/logout, requires an allowed `
 
 1. Fetch `/api/v1/auth/csrf` with `credentials: "include"`; keep the returned token in memory. Browsers send Origin for cross-origin fetches; CLI clients must send it explicitly, including on bootstrap.
 2. Send JSON mutations with `credentials: "include"` and the token in `X-CSRF-Token`.
-3. Bootstrap again after registration/login changes the session cookie, or logout clears cookies. Refresh expired tokens before retrying. Repeat logout uses a fresh bootstrap token.
+3. Bootstrap again after registration confirmation/login changes the session cookie, or logout clears cookies. Refresh expired tokens before retrying. Repeat logout uses a fresh bootstrap token.
 
 Tokens sign a nonce, timestamp, HttpOnly bootstrap cookie and current session cookie, following [OWASP signed double-submit guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#signed-double-submit-cookie-recommended). Origin checking and the signed token protect authentication endpoints too; SameSite alone is insufficient. Credentialed CORS uses explicit origins, never `*`.
 
@@ -76,42 +82,16 @@ Configure `SESSION_TTL_SECONDS` (default 7 days), `CSRF_TTL_SECONDS` (1 hour), `
 
 Profiles match frontend fields: name, campus, department, semester, bio, github, linkedin, website and skillIds. Email is read-only. New accounts have nullable optional fields and no selected skills, permitting incomplete onboarding. Supplied name is 2–80 characters, campus/department 2–100, semester a string 1–8, bio 20–300, links HTTP(S) up to 300. Omitted PATCH fields are preserved; explicit null clears nullable fields. Name and skillIds cannot be null; `[]` clears skills. Duplicates normalize and at most 15 unique catalog IDs are accepted. Unknown IDs reject the whole update. Profile and skill replacement commit together; a user row lock serializes concurrent edits.
 
-## Manual registration → login → profile → logout
+## Manual signup and account walkthrough
 
-PowerShell, after migration, seed and server startup. These are fictional example credentials; choose another email to repeat registration.
-
-```powershell
-$api = 'http://localhost:8000/api/v1'
-$origin = @{ Origin = 'http://localhost:3000' }
-$csrf = Invoke-RestMethod "$api/auth/csrf" -Headers $origin -SessionVariable ccSession
-$headers = @{ Origin = $origin.Origin; 'X-CSRF-Token' = $csrf.csrfToken }
-$credentials = @{ email = 'student@example.com'; password = 'fictional-password-123' }
-$registration = @{ name = 'Fictional Student'; email = $credentials.email; password = $credentials.password }
-Invoke-RestMethod "$api/auth/register" -Method Post -WebSession $ccSession -Headers $headers -ContentType 'application/json' -Body ($registration | ConvertTo-Json)
-
-# Registration already logged in; login below creates another session.
-$csrf = Invoke-RestMethod "$api/auth/csrf" -Headers $origin -WebSession $ccSession
-$headers['X-CSRF-Token'] = $csrf.csrfToken
-Invoke-RestMethod "$api/auth/login" -Method Post -WebSession $ccSession -Headers $headers -ContentType 'application/json' -Body ($credentials | ConvertTo-Json)
-Invoke-RestMethod "$api/auth/me" -WebSession $ccSession
-Invoke-RestMethod "$api/skills" -WebSession $ccSession
-
-$csrf = Invoke-RestMethod "$api/auth/csrf" -Headers $origin -WebSession $ccSession
-$headers['X-CSRF-Token'] = $csrf.csrfToken
-$profile = @{ campus = 'Fictional University'; department = 'Computing'; semester = '3'; bio = 'Building student projects together.'; skillIds = @('react', 'python') }
-Invoke-RestMethod "$api/profiles/me" -Method Patch -WebSession $ccSession -Headers $headers -ContentType 'application/json' -Body ($profile | ConvertTo-Json)
-Invoke-RestMethod "$api/profiles/me" -WebSession $ccSession
-Invoke-RestMethod "$api/auth/logout" -Method Post -WebSession $ccSession -Headers $headers
-# Expected 401:
-Invoke-RestMethod "$api/auth/me" -WebSession $ccSession
-```
+Follow [Signup with an email code](SIGNUP_CODES.md#try-it-locally): enter details at `/signup`, read the code in local Mailpit, confirm, edit the profile, log out, and log in with email/password. Starting registration no longer creates an account or session. Existing unverified accounts retain the link-verification flow described in [AUTHENTICATION.md](AUTHENTICATION.md).
 
 ## Checks and dedicated test database
 
 From the root:
 
 ```powershell
-docker compose --profile test up -d --wait postgres-test
+docker compose --profile test up -d --wait postgres-test mailpit
 cd backend
 $env:TEST_DATABASE_URL = 'postgresql+asyncpg://campuscollab_test:local_test_only@127.0.0.1:5433/campuscollab_test'
 $env:ALLOW_TEST_DB_RESET = 'campuscollab_test'
@@ -135,7 +115,7 @@ PATCH `/profiles/me` flows through schema validation and CSRF checks, then the s
 
 Structured logs contain request ID, route template, method, status and duration, excluding bodies, cookies, tokens and database exception details. The documented `--no-access-log` avoids Uvicorn raw URL/query logs.
 
-Remaining: email verification/password recovery, throttling and production operational hardening. No Redis, workers, WebSockets or AWS are added.
+Email verification, password recovery and PostgreSQL authentication limits are implemented; see [the authentication guide](AUTHENTICATION.md). Production operational hardening remains. No Redis, workers, WebSockets or AWS are added.
 
 
 ## Real projects (migration 0002_projects)
@@ -219,3 +199,7 @@ Routes in `applications.py` call small shared read/transition functions; `applic
 - Production builds passed in **both mock and API modes**. The development database is at **0003_applications (head)** after an additive migration; no development database reset or browser-storage import occurred. Test fixtures used only the guarded dedicated database and ran sequentially with the API browser server.
 
 No environment blockers remain. The local real application/team workflow is implemented; production hardening and the deferred features listed above remain. No commit or push was performed.
+
+## Authentication protection milestone
+
+Migration `0004_auth_recovery` adds email verification state, hashed recovery/verification tokens and PostgreSQL rate buckets without changing applied migrations or verifying existing accounts automatically. New publication/application submissions require verification; existing management actions remain available. Read [AUTHENTICATION.md](AUTHENTICATION.md) for the new endpoints, SMTP/Mailpit setup, limits, expiry, proxy trust, cleanup and testing. Run Uvicorn with `--no-proxy-headers` so application-level trust checks see the real peer.

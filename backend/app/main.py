@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-from app import applications, auth, profiles, projects, skills
+from app import applications, auth, mail, profiles, projects, recovery, registration, skills
 from app.config import Settings
 from app.db import database
 from app.schemas import HealthOut
@@ -41,6 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="CampusCollab API", version="0.1.0", lifespan=lifespan)
     app.state.settings, app.state.engine, app.state.session_factory = settings, engine, factory
+    app.state.send_email = mail.deliver
     if not logger.handlers:
         handler = logging.StreamHandler()
         handler.setFormatter(JsonFormatter())
@@ -50,6 +51,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def request_log(request: Request, call_next):
+        if request.url.path.startswith("/api/v1/auth/") and request.method == "POST":
+            size = 0
+            chunks = []
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > 8192:
+                    return JSONResponse({"detail": "Request too large"}, status_code=413)
+                chunks.append(chunk)
+            request._body = b"".join(chunks)
         start = time.monotonic()
         request_id = str(uuid.uuid4())
         try:
@@ -81,7 +91,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PATCH"],
         allow_headers=["Content-Type", "X-CSRF-Token"],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "Retry-After"],
     )
 
     @app.exception_handler(RequestValidationError)
@@ -117,6 +127,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     for router in (
         auth.router,
+        registration.router,
+        recovery.router,
         profiles.router,
         skills.router,
         projects.router,

@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,13 @@ TEST_SECRET = "test-only-csrf-secret-not-for-production-00000"
 
 
 def settings(url="postgresql+asyncpg://unused:unused@127.0.0.1:5433/campuscollab_test"):
-    return Settings(_env_file=None, app_env="test", database_url=url, csrf_secret=TEST_SECRET)
+    return Settings(
+        _env_file=None,
+        app_env="test",
+        database_url=url,
+        csrf_secret=TEST_SECRET,
+        smtp_timeout_seconds=1,
+    )
 
 
 @pytest.fixture
@@ -30,6 +37,12 @@ async def database_app():
     ).get("DATABASE_URL")
     guard_test_database(url, os.environ.get("ALLOW_TEST_DB_RESET"), development_url)
     app = create_app(settings(url))
+    app.state.outbox = []
+
+    async def capture(settings, message):
+        app.state.outbox.append(message)
+
+    app.state.send_email = capture
     engine = app.state.engine
     try:
         async with exclusive_test_database(engine):
@@ -72,7 +85,7 @@ async def unsafe(client, method, path, **kwargs):
     )
 
 
-async def register(client, email="student@example.com"):
+async def start_registration(client, email="student@example.com"):
     return await unsafe(
         client,
         "POST",
@@ -81,5 +94,58 @@ async def register(client, email="student@example.com"):
             "name": "Fictional Student",
             "email": email,
             "password": "fictional-test-password-123",
+            "confirmPassword": "fictional-test-password-123",
         },
     )
+
+
+def signup_code(app, email="student@example.com"):
+    mail = next(
+        m
+        for m in reversed(app.state.outbox)
+        if m["To"] == email.strip().lower() and m["Subject"] == "Your CampusCollab signup code"
+    )
+    return re.search(
+        r"Code: ([0-9]{6})", mail.get_body(preferencelist=("plain",)).get_content()
+    ).group(1)
+
+
+async def register(client, email="student@example.com"):
+    result = await start_registration(client, email)
+    if result.status_code != 202 or result.json()["deliveryStatus"] != "sent":
+        return result
+    code = signup_code(client._transport.app, email)
+    return await unsafe(
+        client,
+        "POST",
+        "/auth/register/confirm",
+        json={
+            "registrationId": result.json()["registrationId"],
+            "code": code,
+        },
+    )
+
+
+verified_register = register
+
+
+async def legacy_register(client, email="student@example.com"):
+    """Model an existing unverified account, never a public signup bypass."""
+    from uuid import UUID
+
+    from sqlalchemy import update
+
+    from app.mail import message
+    from app.models import User
+    from app.recovery import issue
+
+    result = await register(client, email)
+    if result.status_code == 201:
+        app = client._transport.app
+        async with app.state.session_factory() as db:
+            id = UUID(result.json()["id"])
+            await db.execute(update(User).where(User.id == id).values(email_verified_at=None))
+            await db.commit()
+            token = await issue(db, id, "verify", 86400)
+            app.state.outbox.append(message(app.state.settings, email, "verify", token))
+    return result

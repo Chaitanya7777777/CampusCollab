@@ -46,6 +46,7 @@ export const projectViewSchema = z
     id: z.uuid(),
     ownerId: z.uuid(),
     title: z.string(),
+    isSample: z.boolean().default(false),
     summary: z.string(),
     description: z.string(),
     type: z.string(),

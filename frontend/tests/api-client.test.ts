@@ -6,6 +6,88 @@ import {
   signupSchema,
 } from "../src/lib/api-contract";
 afterEach(() => vi.unstubAllGlobals());
+it("registration start returns pending metadata without a session transition", async () => {
+  const pending = {
+    registrationId: "b09b54a7-eeb1-42da-8c21-4508b0fa8f0b",
+    maskedEmail: "s***@example.com",
+    expiresAt: "2026-10-07T12:10:00Z",
+    resendAt: "2026-10-07T12:01:00Z",
+    serverTime: "2026-10-07T12:00:00Z",
+    deliveryStatus: "unavailable",
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ csrfToken: "test-only" })),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify(pending), { status: 202 }),
+    );
+  vi.stubGlobal("fetch", fetcher);
+  expect(await new ApiClient().startRegistration({})).toEqual(pending);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});
+it("incorrect signup code is actionable and never automatically retried", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ csrfToken: "test-only" })),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "incorrect_code" }), {
+        status: 400,
+      }),
+    );
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    new ApiClient().authenticate("register/confirm", {}),
+  ).rejects.toThrow("code is incorrect");
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});
+it("shows rate-limit retry guidance without replaying the mutation", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ csrfToken: "test-only" })),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "rate_limited" }), {
+        status: 429,
+        headers: { "Retry-After": "120" },
+      }),
+    );
+  vi.stubGlobal("fetch", fetcher);
+  await expect(
+    new ApiClient().requestEmail("password-reset", "fictional@example.com"),
+  ).rejects.toThrow("2 minute(s)");
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});
+it("maps verification and invalid-link errors without treating them as CSRF expiry", async () => {
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ csrfToken: "test-only" })),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "invalid_or_expired_link" }), {
+        status: 400,
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: "email_verification_required" }), {
+        status: 403,
+      }),
+    );
+  vi.stubGlobal("fetch", fetcher);
+  const api = new ApiClient();
+  await expect(
+    api.confirmEmailToken("verification", "test-only"),
+  ).rejects.toThrow("invalid, expired");
+  await expect(api.saveProfile({ name: "Fictional Student" })).rejects.toThrow(
+    "Verify your email",
+  );
+  expect(fetcher).toHaveBeenCalledTimes(3);
+});
 const response = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status });
 it("preserves application conflicts and never replays an ambiguous acceptance", async () => {

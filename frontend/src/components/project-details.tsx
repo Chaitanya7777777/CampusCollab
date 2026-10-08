@@ -129,8 +129,8 @@ export function ProjectDetails({ projectId }: { projectId: string }) {
                   : "Recruitment closed"}
               </Badge>
               <Badge>{project.type}</Badge>
-              <Badge tone="amber">{project.tag}</Badge>
-              <Badge>{project.campus}</Badge>
+              {project.tag && <Badge tone="amber">{project.tag}</Badge>}
+              {project.campus && <Badge>{project.campus}</Badge>}
             </div>
             <h1>{project.title}</h1>
             <p className="lead">{project.summary}</p>

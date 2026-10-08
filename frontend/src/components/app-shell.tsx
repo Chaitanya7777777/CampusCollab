@@ -96,7 +96,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   const path = usePathname();
   if (API_MODE) return <ApiShell>{children}</ApiShell>;
   if (path === "/") return children;
-  if (path === "/login" || path === "/signup")
+  if (
+    [
+      "/login",
+      "/signup",
+      "/forgot-password",
+      "/reset-password",
+      "/verify-email",
+    ].includes(path)
+  )
     return <AuthFrame signup={path === "/signup"}>{children}</AuthFrame>;
   return (
     <>

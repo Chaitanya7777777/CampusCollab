@@ -144,6 +144,8 @@ async def locked_project(db, id):
     project = await db.scalar(select(Project).where(Project.id == id).with_for_update())
     if not project:
         raise HTTPException(404, "Project not found")
+    if project.sample_seed:
+        raise HTTPException(403, "Sample projects are read-only")
     return project
 
 
@@ -178,6 +180,8 @@ async def submit(
     principal: Principal = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if not principal.user.email_verified_at:
+        raise HTTPException(403, "email_verification_required")
     project = await locked_project(db, project_id)
     if project.status == "draft":
         raise HTTPException(404, "Project not found")

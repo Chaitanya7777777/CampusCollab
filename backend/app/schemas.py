@@ -44,6 +44,8 @@ class RegisterInput(LoginInput):
 
 
 class UserOut(BaseModel):
+    emailVerifiedAt: datetime | None = None
+    verificationEmailStatus: Literal["sent", "unavailable"] | None = None
     id: UUID
     name: str
     email: str

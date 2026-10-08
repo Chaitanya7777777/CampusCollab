@@ -2,6 +2,7 @@
 node_modules/
 .next/
 .next-api/
+.next-*/
 out/
 dist/
 build/
@@ -52,3 +53,18 @@ __pycache__/
 .coverage.*
 htmlcov/
 *.egg-info/
+
+# Local database/email exports and browser authentication captures
+*.dump
+*.sql
+*.har
+*.sql.gz
+*.sql.bak
+*.backup
+*.eml
+*.mbox
+mailpit-data/
+database-dumps/
+playwright/.auth/
+storage-state*.json
+storageState*.json

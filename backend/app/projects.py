@@ -34,6 +34,8 @@ async def owned(db, id, actor):
     project = await db.scalar(select(Project).where(Project.id == id).with_for_update())
     if not project or project.owner_id != actor:
         raise HTTPException(404, "Project not found")
+    if project.sample_seed:
+        raise HTTPException(403, "Sample projects are read-only")
     return project
 
 
@@ -121,7 +123,9 @@ def view(project, data):
             description=r.description,
             positions=r.positions or 0,
             skillIds=sorted(role_skills[r.id]),
-            openings=max(0, (r.positions or 0) - sum(m.role_id == r.id for m in team)),
+            openings=0
+            if project.sample_seed
+            else max(0, (r.positions or 0) - sum(m.role_id == r.id for m in team)),
         )
         for r in relevant
     ]
@@ -131,7 +135,10 @@ def view(project, data):
         id=project.id,
         ownerId=project.owner_id,
         title=project.title,
-        summary=project.description[:200],
+        isSample=bool(project.sample_seed),
+        summary=project.description.partition(". ")[0] + "."
+        if project.sample_seed
+        else project.description[:200],
         description=project.description,
         type=project.type,
         tag=project.event_name,
@@ -397,6 +404,7 @@ async def mine(principal: Principal = Depends(current_user), db: AsyncSession = 
         await db.scalars(
             select(Project)
             .where(
+                Project.sample_seed.is_(None),
                 or_(
                     Project.owner_id == actor,
                     (Project.status != "draft")
@@ -405,7 +413,7 @@ async def mine(principal: Principal = Depends(current_user), db: AsyncSession = 
                             ProjectMember.project_id == Project.id, ProjectMember.user_id == actor
                         )
                     ),
-                )
+                ),
             )
             .order_by(Project.updated_at.desc(), Project.id)
         )
@@ -453,6 +461,8 @@ async def create(
     principal: Principal = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if publish and not principal.user.email_verified_at:
+        raise HTTPException(403, "email_verification_required")
     return await save_project(db, principal.user.id, data, publish=publish)
 
 
@@ -488,6 +498,8 @@ async def publish(
     principal: Principal = Depends(current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if not principal.user.email_verified_at:
+        raise HTTPException(403, "email_verification_required")
     return await save_project(db, principal.user.id, data, id, publish=True)
 
 
@@ -525,7 +537,9 @@ async def detail(
     )
     result["application"] = output(application) if application else None
     result["eligibility"] = (
-        "You are already a team member."
+        "Recruitment is closed."
+        if project.sample_seed
+        else "You are already a team member."
         if any(m["student"]["id"] == principal.user.id for m in result["team"])
         else f"Your application is {application.status}. Reapplication is unavailable."
         if application
@@ -533,6 +547,8 @@ async def detail(
         if project.status != "published" or project.recruitment != "open"
         else "The team is full."
         if result["memberCount"] >= result["capacity"]
+        else "Verify your email from your profile before applying."
+        if not principal.user.email_verified_at
         else None
     )
     return result

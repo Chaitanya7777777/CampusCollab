@@ -1,7 +1,8 @@
+from ipaddress import ip_network
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, HttpUrl, SecretStr, TypeAdapter, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -19,9 +20,48 @@ class Settings(BaseSettings):
     cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     session_cookie: str = "cc_session"
     csrf_cookie: str = "cc_csrf"
+    frontend_base_url: str = "http://localhost:3000"
+    reset_ttl_seconds: int = Field(default=1800, ge=60, le=86400)
+    verification_ttl_seconds: int = Field(default=86400, ge=60, le=604800)
+    signup_code_ttl_seconds: int = Field(default=600, ge=60, le=1800)
+    signup_code_attempts: int = Field(default=5, ge=1, le=10)
+    signup_resend_cooldown_seconds: int = Field(default=60, ge=1, le=600)
+    smtp_host: str = "127.0.0.1"
+    smtp_port: int = Field(default=1025, ge=1, le=65535)
+    smtp_username: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_from: str = "CampusCollab <noreply@campuscollab.local>"
+    smtp_tls: Literal["none", "starttls", "tls"] = "none"
+    smtp_timeout_seconds: float = Field(default=5, ge=1, le=10)
+    trusted_proxy_networks: list[str] = []
+    rate_window_seconds: int = Field(default=900, ge=1, le=86400)
+    rate_ip_limit: int = Field(default=300, ge=1, le=10000)
+    rate_login_limit: int = Field(default=10, ge=1, le=1000)
+    rate_signup_limit: int = Field(default=5, ge=1, le=1000)
+    rate_email_limit: int = Field(default=3, ge=1, le=1000)
+    rate_token_limit: int = Field(default=10, ge=1, le=1000)
 
     @model_validator(mode="after")
     def secure_configuration(self):
+        TypeAdapter(HttpUrl).validate_python(self.frontend_base_url)
+        front = urlsplit(self.frontend_base_url)
+        if (
+            front.scheme not in ("http", "https")
+            or not front.hostname
+            or front.username
+            or front.password
+            or front.query
+            or front.fragment
+            or front.path not in ("", "/")
+        ):
+            raise ValueError("FRONTEND_BASE_URL must be one explicit HTTP(S) origin")
+        if self.app_env == "production" and (front.scheme != "https" or self.smtp_tls == "none"):
+            raise ValueError("Production requires HTTPS frontend links and SMTP TLS")
+        if "\r" in self.smtp_from or "\n" in self.smtp_from:
+            raise ValueError("Invalid SMTP sender")
+        for network in self.trusted_proxy_networks:
+            if ip_network(network).prefixlen == 0:
+                raise ValueError("Wildcard proxy trust is prohibited")
         secret = self.csrf_secret.get_secret_value()
         if len(secret) < 32 or secret.startswith("replace-"):
             raise ValueError("Set a random CSRF_SECRET of at least 32 characters")

@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+process.env.CONVERSION_TEST_EMAIL ??= `operator-${randomUUID()}@example.com`;
+process.env.CONVERSION_TEST_PASSWORD ??= `test-only-${randomUUID()}`;
 export default defineConfig({
   testDir: "./e2e-api",
   fullyParallel: false,

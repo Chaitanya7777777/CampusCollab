@@ -6,6 +6,7 @@ import { Network, UserRound, Compass, Folder } from "lucide-react";
 import { AuthFrame } from "./public-pages";
 import { useAuth } from "./api-auth";
 import { Avatar, ErrorState, Loading } from "./ui";
+import { VerificationBanner } from "./email-auth";
 function ApiNavigation() {
   const path = usePathname();
   return (
@@ -34,12 +35,19 @@ export function ApiShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const publicPage = path === "/login" || path === "/signup";
+  const emailPage = [
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+  ].includes(path);
   useEffect(() => {
-    if (path === "/" || auth.phase !== "ready" || auth.busy) return;
+    if (path === "/" || emailPage || auth.phase !== "ready" || auth.busy)
+      return;
     if (!auth.user && !publicPage) router.replace("/login");
     if (auth.user && publicPage) router.replace("/profile");
-  }, [auth.phase, auth.user, auth.busy, publicPage, router, path]);
+  }, [auth.phase, auth.user, auth.busy, publicPage, emailPage, router, path]);
   if (path === "/") return children;
+  if (emailPage) return <AuthFrame signup={false}>{children}</AuthFrame>;
   let content: ReactNode;
   if (auth.phase === "loading")
     content = <Loading label="Checking your session…" />;
@@ -102,6 +110,9 @@ export function ApiShell({ children }: { children: ReactNode }) {
           <ApiNavigation />
         </div>
         <main id="main" className="page-container">
+          {auth.phase === "ready" && auth.user && (
+            <VerificationBanner key={`verification-${auth.user.id}`} />
+          )}
           {error && (
             <p role="alert" className="error-banner mb-4">
               {error}

@@ -99,7 +99,7 @@ export function useApply(projectId: string, roleId: string) {
       API_MODE
         ? api.apply(projectId, roleId, data)
         : mockApi.apply(projectId, roleId, data),
-    onSuccess: () => client.invalidateQueries(),
+    onSettled: () => client.invalidateQueries(),
   });
 }
 export const useMyProjects = () =>

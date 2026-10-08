@@ -12,9 +12,11 @@ export function ProjectCard({ project }: { project: ProjectView }) {
           >
             {project.type}
           </Badge>
-          <Badge tone={project.type === "Hackathon" ? "amber" : "lavender"}>
-            {project.tag}
-          </Badge>
+          {project.tag && (
+            <Badge tone={project.type === "Hackathon" ? "amber" : "lavender"}>
+              {project.tag}
+            </Badge>
+          )}
         </div>
         <h2>
           <Link href={`/projects/${project.id}`}>{project.title}</Link>

@@ -14,7 +14,7 @@ CampusCollab makes those steps explicit: owners recruit for contribution roles, 
 
 ## Key capabilities
 
-- **Student profiles:** registration, login/logout, editable profiles and selection from a controlled skill catalog.
+- **Student profiles:** email-code signup before account creation, login/logout, email verification, password recovery, editable profiles and selection from a controlled skill catalog.
 - **Project recruitment:** private drafts, publication, team capacity and repeatable roles with required skills and openings. Project types include Hackathon, Personal Project, Research, Startup and Open Source.
 - **Discovery:** search, skill/type/role/campus filters, availability filters, sorting and server-side pagination in API mode.
 - **Applications:** role-specific submissions, searchable application history, status filters and confirmed withdrawal. Owners review applications and accept or reject pending requests.
@@ -61,7 +61,7 @@ The commands below use **Windows PowerShell** from a checkout of this repository
 From the repository root:
 
 ```powershell
-docker compose up -d --wait postgres
+docker compose up -d --wait postgres mailpit
 if (-not (Test-Path backend/.venv)) { python -m venv backend/.venv }
 backend/.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
 if (-not (Test-Path backend/.env)) {
@@ -90,10 +90,10 @@ Then migrate, seed the skill catalog and start the API:
 cd backend
 .venv/Scripts/python.exe -m alembic upgrade head
 .venv/Scripts/python.exe -m app.skills
-.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log
+.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log --no-proxy-headers
 ```
 
-Run backend commands from `backend/` so settings find `.env`. Alembic applies the identity, project and application migrations; startup does not create tables. Skill seeding is explicit and idempotent and does not create demo accounts.
+Run backend commands from `backend/` so settings find `.env`. Alembic applies the identity, project, application and account-protection migrations; startup does not create tables. Skill seeding is explicit and idempotent and does not create demo accounts.
 
 Development PostgreSQL uses `127.0.0.1:5432` and the named `postgres_data` volume. `docker compose stop` preserves its data. Compose credentials are local examples, not production credentials. Keep real environment files out of Git.
 
@@ -119,7 +119,7 @@ Use `localhost` consistently in the browser. The default `ALLOWED_ORIGINS` inclu
 
 ### 3. Try the workflow
 
-Register and complete a profile. Publish a project with a recruitment role. Use a separate browser profile or an incognito session for a second account, discover the project and apply. Return to the owner account and open **Manage Project > Applications** to review and accept the request. Refresh the applicant's **My Applications** to see the accepted status and team access; the roster and available openings update from memberships.
+Register, confirm your email through local Mailpit at http://localhost:8025, and complete a profile. Publish a project with a recruitment role. Use a separate browser profile or an incognito session for a second account, verify its email, discover the project and apply. Return to the owner account and open **Manage Project > Applications** to review and accept the request. Refresh the applicant's **My Applications** to see the accepted status and team access; the roster and available openings update from memberships.
 
 ## Mock versus API mode
 
@@ -151,7 +151,7 @@ For the mock browser suite, stop any existing Next.js server on port 3000 first 
 Backend integration tests use a **dedicated database**, never the development database. From the repository root:
 
 ```powershell
-docker compose --profile test up -d --wait postgres-test
+docker compose --profile test up -d --wait postgres-test mailpit
 $env:TEST_DATABASE_URL = 'postgresql+asyncpg://campuscollab_test:local_test_only@127.0.0.1:5433/campuscollab_test'
 $env:ALLOW_TEST_DB_RESET = 'campuscollab_test'
 cd backend
@@ -185,13 +185,26 @@ Coverage includes session/CSRF behavior, authorization and private data access, 
 
 ## Current limitations and next steps
 
-The core local workflow is implemented, but the repository is not presented as a production-ready deployment. Remaining work includes email verification, password recovery, throttling and deployment/operational hardening.
+The core local workflow is implemented, but the repository is not presented as a production-ready deployment. Email verification, password recovery and PostgreSQL-backed authentication rate limits are implemented. Production still requires an authorized SMTP provider, HTTPS/proxy configuration, monitoring and abuse tuning.
 
-Published-project editing, archive restoration, invitations, member removal and ownership transfer are not implemented. Other sessions see changes on navigation, refetch or window focus; live push updates are deferred. Discovery uses bounded offset pagination and basic PostgreSQL substring search. Notifications, email delivery, chat and AI features are outside the current implementation.
+Published-project editing, archive restoration, invitations, member removal and general ownership transfer are not implemented. Other sessions see changes on navigation, refetch or window focus; live push updates are deferred. Discovery uses bounded offset pagination and basic PostgreSQL substring search. Account emails use local Mailpit or configurable SMTP. Notifications, chat and AI features remain outside the current implementation.
+
+## Account verification and recovery
+
+Signup collects account details, sends a six-digit email code and creates the account, profile and session only after successful confirmation. Codes expire after ten minutes; incorrect attempts and resends are limited. Ordinary login uses email and password, without a login code.
+
+Existing unverified accounts can confirm their email using the profile banner. Verified email is required to publish projects and submit new applications; profile editing, drafts and existing management remain available. Password recovery uses an expiring, single-use link and revokes all sessions after a successful reset.
+
+**Mailpit captures local messages at http://localhost:8025; it does not deliver to Gmail or other external inboxes. External inbox delivery is not configured yet.** Production email requires an authorized SMTP provider and sender. Authentication requests have persistent PostgreSQL-backed rate limits; SMTP delivery is bounded but has no durable retry queue.
+
+See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operations guide](backend/AUTHENTICATION.md) for code limits, CSRF, SMTP configuration and cleanup commands.
 
 ## Detailed documentation
 
+- [Signup codes and local Mailpit walkthrough](backend/SIGNUP_CODES.md)
+- [Account security, recovery, verification and SMTP setup](backend/AUTHENTICATION.md)
 - [Backend setup, API contracts, security and database tests](backend/README.md)
 - [Frontend modes, session behavior and browser integration tests](frontend/API_MODE.md)
 - [Local PostgreSQL services](compose.yaml)
 - [Backend environment template](backend/.env.example) and [frontend environment template](frontend/.env.example)
+- [Local seeded-project conversion and maintenance](backend/SAMPLE_PROJECTS.md)

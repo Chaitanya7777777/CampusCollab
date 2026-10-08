@@ -16,6 +16,7 @@ export interface Student {
   website: string;
 }
 export interface Project {
+  isSample?: boolean;
   status?: "published" | "archived";
   archivedAt?: string;
   publishedAt?: string;

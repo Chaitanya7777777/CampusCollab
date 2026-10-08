@@ -1,9 +1,23 @@
 import { z } from "zod";
+export const pendingRegistrationSchema = z.object({
+  registrationId: z.uuid(),
+  maskedEmail: z.string(),
+  expiresAt: z.iso.datetime({ offset: true }),
+  resendAt: z.iso.datetime({ offset: true }),
+  serverTime: z.iso.datetime({ offset: true }),
+  deliveryStatus: z.enum(["sent", "unavailable"]),
+});
+export type PendingRegistration = z.infer<typeof pendingRegistrationSchema>;
 export const userSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   email: z.string(),
   createdAt: z.string(),
+  emailVerifiedAt: z.string().nullable(),
+  verificationEmailStatus: z
+    .enum(["sent", "unavailable"])
+    .nullable()
+    .optional(),
 });
 export const apiProfileSchema = userSchema.extend({
   campus: z.string().nullable(),
@@ -68,7 +82,15 @@ export function profileValues(profile: ApiProfile): ProfileFormValues {
   );
 }
 export type ProfilePatch = Partial<
-  Omit<ApiProfile, "id" | "email" | "createdAt" | "updatedAt">
+  Omit<
+    ApiProfile,
+    | "id"
+    | "email"
+    | "createdAt"
+    | "updatedAt"
+    | "emailVerifiedAt"
+    | "verificationEmailStatus"
+  >
 >;
 export function profilePatch(
   values: ProfileFormValues,

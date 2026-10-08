@@ -1,3 +1,4 @@
+import { completeSignup } from "./mail";
 import { test, expect, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 const account = () => ({
@@ -14,8 +15,9 @@ async function signup(page: Page, user: ReturnType<typeof account>) {
     .getByLabel("Confirm password", { exact: true })
     .fill(user.password);
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
+  await completeSignup(page, user.email);
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByLabel("Full name")).toHaveValue(user.name);
 }
@@ -136,12 +138,16 @@ test("duplicate registration, incorrect login and account switching isolate priv
     .getByLabel("Confirm password", { exact: true })
     .fill(first.password);
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
+  await completeSignup(page, first.email);
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
-    "already exists",
+    "Registration cannot be completed",
   );
-  await page.getByRole("link", { name: "Log in", exact: true }).click();
+  await page.goto("/login");
+  await page.evaluate(() =>
+    sessionStorage.removeItem("campuscollab-pending-signup-v1"),
+  );
   await login(page, { ...first, password: "incorrect-password" });
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "Invalid email or password",

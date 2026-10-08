@@ -1,4 +1,5 @@
-﻿import { test, expect } from "@playwright/test";
+import { completeSignup } from "./mail";
+import { test, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 test("landing session actions, auth validation, visibility and keyboard signup", async ({
   page,
@@ -31,13 +32,12 @@ test("landing session actions, auth validation, visibility and keyboard signup",
     .first()
     .click();
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
   await expect(page.locator("#name")).toHaveAttribute("aria-invalid", "true");
   await page.getByLabel("Full name").fill("Landing Student");
-  await page
-    .getByLabel("Email", { exact: true })
-    .fill(`landing-${randomUUID()}@example.com`);
+  const email = `landing-${randomUUID()}@example.com`;
+  await page.getByLabel("Email", { exact: true }).fill(email);
   const password = `fictional-${randomUUID()}`;
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByLabel("Confirm password", { exact: true }).fill("mismatch");
@@ -53,7 +53,7 @@ test("landing session actions, auth validation, visibility and keyboard signup",
     .getByRole("button", { name: "Hide password", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Create account", exact: true })
+    .getByRole("button", { name: "Send verification code", exact: true })
     .click();
   await expect(page.locator("#confirmPassword")).toHaveAttribute(
     "aria-invalid",
@@ -79,6 +79,7 @@ test("landing session actions, auth validation, visibility and keyboard signup",
     fullPage: true,
   });
   await page.getByLabel("Confirm password", { exact: true }).press("Enter");
+  await completeSignup(page, email);
   await expect(page).toHaveURL(/\/profile$/);
   for (const route of ["/login", "/signup"]) {
     await page.goto(route);

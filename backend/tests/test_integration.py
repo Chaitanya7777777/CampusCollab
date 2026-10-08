@@ -9,10 +9,10 @@ from sqlalchemy import func, select, text, update
 
 from app.auth import hasher
 from app.db import Base
-from app.models import Profile, Session, Skill, User
+from app.models import PendingRegistration, Profile, Session, Skill, User
 from app.security import token_hash
 from app.skills import seed_skills
-from tests.conftest import register, unsafe
+from tests.conftest import register, signup_code, start_registration, unsafe
 
 pytestmark = pytest.mark.integration
 PASSWORD = "fictional-test-password-123"
@@ -22,7 +22,7 @@ async def test_empty_database_migration_matches_models_and_seed_is_idempotent(da
     async with database_app.state.engine.connect() as connection:
         assert (
             await connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0003_applications"
+            == "0007_project_conversion"
         )
         differences = await connection.run_sync(
             lambda conn: compare_metadata(MigrationContext.configure(conn), Base.metadata)
@@ -56,17 +56,20 @@ async def test_registration_normalization_sessions_and_response_privacy(client, 
     assert (await register(client)).status_code == 409
 
 
-async def test_concurrent_duplicate_registration_is_atomic(database_app):
+async def test_concurrent_duplicate_registration_is_atomic(client, database_app):
+    pending = (await start_registration(client)).json()
+    payload = {"registrationId": pending["registrationId"], "code": signup_code(database_app)}
+
     async def attempt():
         async with AsyncClient(
             transport=ASGITransport(app=database_app),
             base_url="http://localhost:8000",
             headers={"Origin": "http://localhost:3000"},
         ) as c:
-            return await register(c)
+            return await unsafe(c, "POST", "/auth/register/confirm", json=payload)
 
     results = await asyncio.gather(attempt(), attempt())
-    assert sorted(result.status_code for result in results) == [201, 409]
+    assert sorted(result.status_code for result in results) == [201, 400]
     async with database_app.state.session_factory() as db:
         for model in (User, Profile, Session):
             assert await db.scalar(select(func.count()).select_from(model)) == 1
@@ -192,3 +195,4 @@ async def test_failed_registration_rolls_back_all_records(client, database_app):
     async with database_app.state.session_factory() as db:
         for model in (User, Profile, Session):
             assert await db.scalar(select(func.count()).select_from(model)) == 0
+        assert await db.scalar(select(PendingRegistration.consumed_at)) is None
