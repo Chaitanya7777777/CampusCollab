@@ -86,6 +86,21 @@ Use direct connections for this one-worker MVP, with a bounded pool of three, no
 
 `app.production_start` runs `alembic upgrade head` before binding the port. Online Alembic commands take the same PostgreSQL session advisory lock, released when the connection closes even on failure. Lock waits are bounded by the driver timeout; failure stops that deployment. It never drops, resets, downgrades or seeds data. No paid Render pre-deploy hook is used.
 
+Startup failures emit a JSON `production_startup_failed` event with `stage`
+(`configuration_validation`, `database_connection`, `migration`, or `server_launch`),
+`exception_class`, `category`, a safe `explanation`, and relevant `settings` names.
+Configuration summaries omit values, inputs and exception context. Database errors
+are categorized using exception types/SQLSTATE (for example TLS certificate, DNS,
+authentication, permission or timeout), never raw driver text or connection URLs.
+The migration stage includes advisory-lock acquisition. Unknown errors remain
+generic rather than risking disclosure. No failure bypasses validation or starts
+the server after a failed migration.
+
+If Render reports only the old bare event, it is still running the earlier entry
+point. After these diagnostics are committed and deployed with authorization,
+inspect the new JSON event to identify the next action; do not infer a database
+credential problem from the old message alone. Do not share environment values.
+
 For explicit migration/skill-seeding administration, create a separate ignored environment file, for example `backend/.env.hosted`, with the Render settings and direct Neon credentials using your editor. Keep local `backend/.env` unchanged. Run from `backend/`:
 
 ```powershell

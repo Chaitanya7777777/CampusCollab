@@ -53,7 +53,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def secure_configuration(self):
-        TypeAdapter(HttpUrl).validate_python(self.frontend_base_url)
+        try:
+            TypeAdapter(HttpUrl).validate_python(self.frontend_base_url)
+        except ValueError:
+            raise ValueError("FRONTEND_BASE_URL must be one explicit HTTP(S) origin") from None
         front = urlsplit(self.frontend_base_url)
         if (
             front.scheme not in ("http", "https")
@@ -87,7 +90,13 @@ class Settings(BaseSettings):
         if "\r" in self.smtp_from or "\n" in self.smtp_from:
             raise ValueError("Invalid SMTP sender")
         for network in self.trusted_proxy_networks:
-            if ip_network(network).prefixlen == 0:
+            try:
+                prefix = ip_network(network).prefixlen
+            except ValueError:
+                raise ValueError(
+                    "TRUSTED_PROXY_NETWORKS must contain valid network ranges"
+                ) from None
+            if prefix == 0:
                 raise ValueError("Wildcard proxy trust is prohibited")
         secret = self.csrf_secret.get_secret_value()
         if len(secret) < 32 or secret.startswith("replace-"):

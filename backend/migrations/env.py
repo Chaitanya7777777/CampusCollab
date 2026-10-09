@@ -17,9 +17,13 @@ def migrate(connection):
 
 
 async def online():
+    stage = config.attributes.get("startup_stage", lambda value: None)
+    stage("configuration_validation")
     engine, _ = database(Settings(), migration=True)
     try:
+        stage("database_connection")
         async with engine.connect() as connection:
+            stage("migration")
             # Session-level lock on a direct connection survives Alembic commits.
             # command_timeout bounds lock acquisition; failure aborts startup.
             await connection.execute(text("SELECT pg_advisory_lock(734820192)"))
