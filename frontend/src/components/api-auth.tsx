@@ -47,6 +47,7 @@ export function ApiProviders({ children }: { children: ReactNode }) {
   const [busy, setBusy] = useState(false);
   const generation = useRef(0);
   const operation = useRef(false);
+  const checking = useRef(false);
   const channel = useRef<BroadcastChannel | null>(null);
   const clear = useCallback(() => {
     api.reset();
@@ -77,19 +78,53 @@ export function ApiProviders({ children }: { children: ReactNode }) {
         void restore();
       };
     }
-    const focus = () => {
+    const expired = () => {
       if (!operation.current) void restore();
     };
-    window.addEventListener("focus", focus);
-    window.addEventListener("campuscollab-session-expired", focus);
+    window.addEventListener("campuscollab-session-expired", expired);
     return () => {
       window.clearTimeout(bootstrap);
       dispose();
       channel.current?.close();
-      window.removeEventListener("focus", focus);
-      window.removeEventListener("campuscollab-session-expired", focus);
+      window.removeEventListener("campuscollab-session-expired", expired);
     };
   }, [restore, dispose]);
+  useEffect(() => {
+    const check = async () => {
+      if (operation.current || checking.current) return;
+      if (state.phase !== "ready") return;
+      checking.current = true;
+      const current = ++generation.current;
+      try {
+        // Revalidate identity before refreshing account-scoped data. A routine
+        // focus check must not clear the cache or unmount the current page.
+        const user = await api.me();
+        if (current !== generation.current) return;
+        const sameAccount = user?.id === state.user?.id;
+        if (!sameAccount) clear();
+        setState({ phase: "ready", user });
+        if (sameAccount) void client.invalidateQueries();
+      } catch (error) {
+        if (current !== generation.current) return;
+        // Do not present an unverifiable session as signed out or retain
+        // private content after a genuine authentication/server failure.
+        clear();
+        setState({ phase: "error", user: null, error: error as Error });
+      } finally {
+        checking.current = false;
+      }
+    };
+    const focus = () => void check();
+    const visible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    window.addEventListener("focus", focus);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      window.removeEventListener("focus", focus);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [clear, client, state.phase, state.user?.id]);
   async function change(
     action: "login" | "register/confirm" | "logout",
     values?: unknown,
