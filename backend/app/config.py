@@ -2,7 +2,7 @@ from ipaddress import ip_network
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, HttpUrl, SecretStr, TypeAdapter, model_validator
+from pydantic import EmailStr, Field, HttpUrl, SecretStr, TypeAdapter, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import make_url
 
@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     signup_code_ttl_seconds: int = Field(default=600, ge=60, le=1800)
     signup_code_attempts: int = Field(default=5, ge=1, le=10)
     signup_resend_cooldown_seconds: int = Field(default=60, ge=1, le=600)
+    email_provider: Literal["smtp", "brevo"] = "smtp"
+    brevo_api_key: SecretStr | None = None
+    brevo_sender_email: EmailStr | None = None
+    brevo_sender_name: str = Field(default="CampusCollab", min_length=1, max_length=100)
+    brevo_timeout_seconds: float = Field(default=5, ge=1, le=10)
     smtp_host: str = "127.0.0.1"
     smtp_port: int = Field(default=1025, ge=1, le=65535)
     smtp_username: str | None = None
@@ -55,8 +60,25 @@ class Settings(BaseSettings):
             or front.path not in ("", "/")
         ):
             raise ValueError("FRONTEND_BASE_URL must be one explicit HTTP(S) origin")
-        if self.app_env == "production" and (front.scheme != "https" or self.smtp_tls == "none"):
-            raise ValueError("Production requires HTTPS frontend links and SMTP TLS")
+        if self.app_env == "production" and (
+            front.scheme != "https" or (self.email_provider == "smtp" and self.smtp_tls == "none")
+        ):
+            raise ValueError("Production requires HTTPS frontend links and TLS for SMTP delivery")
+        if self.email_provider == "brevo":
+            key = self.brevo_api_key.get_secret_value() if self.brevo_api_key else ""
+            if (
+                not key
+                or key.lower().startswith(("replace-", "your-", "your_", "<"))
+                or not key.isascii()
+                or any(ord(c) <= 32 or ord(c) == 127 for c in key)
+            ):
+                raise ValueError("Set BREVO_API_KEY privately when EMAIL_PROVIDER=brevo")
+            if not self.brevo_sender_email:
+                raise ValueError("BREVO_SENDER_EMAIL is required when EMAIL_PROVIDER=brevo")
+            if not self.brevo_sender_name.strip() or any(
+                ord(c) < 32 or ord(c) == 127 for c in self.brevo_sender_name
+            ):
+                raise ValueError("BREVO_SENDER_NAME must be a nonempty, single-line name")
         if "\r" in self.smtp_from or "\n" in self.smtp_from:
             raise ValueError("Invalid SMTP sender")
         for network in self.trusted_proxy_networks:
@@ -90,3 +112,11 @@ class Settings(BaseSettings):
         if self.session_cookie == self.csrf_cookie:
             raise ValueError("Session and CSRF cookie names must differ")
         return self
+
+    @property
+    def email_timeout_seconds(self) -> float:
+        return (
+            self.brevo_timeout_seconds
+            if self.email_provider == "brevo"
+            else self.smtp_timeout_seconds
+        )

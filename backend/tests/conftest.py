@@ -24,6 +24,7 @@ def settings(url="postgresql+asyncpg://unused:unused@127.0.0.1:5433/campuscollab
         database_url=url,
         csrf_secret=TEST_SECRET,
         smtp_timeout_seconds=1,
+        email_provider="smtp",
     )
 
 

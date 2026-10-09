@@ -1,5 +1,7 @@
 # CampusCollab backend
 
+Email delivery supports local SMTP/Mailpit and Brevo HTTPS. See [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md) for private configuration, restart commands and safe delivery diagnostics.
+
 New signup uses email codes before account creation. See [SIGNUP_CODES.md](SIGNUP_CODES.md) for endpoints, local Mailpit steps, limits and migration details.
 
 Existing seeded projects can be converted to ordinary projects owned by an existing verified account. See [conversion and maintenance](SAMPLE_PROJECTS.md) for the transactional preview/apply command and protected cleanup boundaries. Fictional seed identities remain disabled.

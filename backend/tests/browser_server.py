@@ -29,6 +29,12 @@ async def main():
     settings = Settings(
         _env_file=None,
         app_env="test",
+        email_provider="smtp",
+        smtp_host="127.0.0.1",
+        smtp_port=1025,
+        smtp_tls="none",
+        smtp_username=None,
+        smtp_password=None,
         database_url=url,
         csrf_secret=secrets.token_urlsafe(48),
         allowed_origins=["http://localhost:3100"],

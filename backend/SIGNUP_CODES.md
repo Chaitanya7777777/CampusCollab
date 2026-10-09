@@ -28,7 +28,7 @@ npm.cmd run dev
 3. Return to signup, enter or paste the code, and click **Verify and create account** (Enter works too). You will reach `/profile` with a verified account.
 4. Log out and log in with email/password. No code is requested at login.
 
-Mailpit **captures local SMTP messages only**. It does not deliver to Gmail, Outlook or other external inboxes, even when a real address is entered. External delivery requires an authorized production sender and configured SMTP provider (`SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, optional credentials, and TLS). Keep provider secrets in the backend environment, never in chat or frontend variables. Delivery is in-process and bounded by the existing SMTP timeout; there is no durable retry queue.
+Mailpit **captures local SMTP messages only**. It does not deliver to Gmail, Outlook or other external inboxes, even when a real address is entered. External delivery requires an authorized sender and configured Brevo HTTPS or SMTP provider; see [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md) for private settings and restart commands. Keep provider secrets in the backend environment, never in chat or frontend variables. Delivery is in-process and bounded by the selected provider timeout; there is no durable retry queue.
 
 ## HTTP contract
 
@@ -40,7 +40,7 @@ All routes are under `/api/v1/auth`, with the existing allowed `Origin`, credent
 | `/register/confirm` | `registrationId` (UUID), `code` (six ASCII digits as a string) | 201 public user + HttpOnly session cookie; verified account/profile/session and consumption commit together |
 | `/register/resend` | `registrationId` | 200 updated pending metadata; new code invalidates the prior code |
 
-Pending responses contain `registrationId`, `maskedEmail`, `expiresAt`, `resendAt`, `serverTime`, and `deliveryStatus: sent | unavailable`. A failed SMTP attempt returns `unavailable`, preserving the pending record for controlled resend; it never reports successful account creation. Existing and new addresses get the same start flow. An already registered email can only be rejected after a correct code proves mailbox possession; confirmation then returns generic 409 `registration_unavailable`, without creating another account or session. A new registration start supersedes earlier unfinished registrations for that email.
+Pending responses contain `registrationId`, `maskedEmail`, `expiresAt`, `resendAt`, `serverTime`, and `deliveryStatus: sent | unavailable`. A failed provider attempt returns `unavailable`, preserving the pending record for controlled resend; it never reports successful account creation. Existing and new addresses get the same start flow. An already registered email can only be rejected after a correct code proves mailbox possession; confirmation then returns generic 409 `registration_unavailable`, without creating another account or session. A new registration start supersedes earlier unfinished registrations for that email.
 
 The former account-creating `/register` behavior is removed. Missing password confirmation is a schema error, not a legacy signup bypass. Refresh CSRF after successful confirmation changes the session cookie. The frontend uses the existing authentication provider to cancel and clear private queries, restore the new identity, notify other tabs, and navigate to `/profile`.
 
@@ -102,4 +102,4 @@ npm.cmd run test:api
 - Ruff lint/formatting, pip checks, frontend lint and TypeScript checks passed. Both mock and API production builds passed in separate output folders.
 - Port 3000 was occupied by the running development website. Mock tests used `MOCK_TEST_PORT=3200` and `MOCK_TEST_DIST_DIR=.next-mock-test`, without stopping that website. Temporary test/build output remains ignored. The previously started local FastAPI process was restarted, and readiness plus the new registration contract were verified on port 8000.
 
-No unresolved local blocker. External inbox delivery still requires a production SMTP provider and authorized sender; only local Mailpit delivery was tested. No commit or push was performed.
+No unresolved local blocker. External inbox delivery requires configured provider credentials and an authorized sender; only local Mailpit delivery was tested. No commit or push was performed.

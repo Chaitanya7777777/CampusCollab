@@ -185,9 +185,9 @@ Coverage includes session/CSRF behavior, authorization and private data access, 
 
 ## Current limitations and next steps
 
-The core local workflow is implemented, but the repository is not presented as a production-ready deployment. Email verification, password recovery and PostgreSQL-backed authentication rate limits are implemented. Production still requires an authorized SMTP provider, HTTPS/proxy configuration, monitoring and abuse tuning.
+The core local workflow is implemented, but the repository is not presented as a production-ready deployment. Email verification, password recovery and PostgreSQL-backed authentication rate limits are implemented. Production still requires configured email-provider credentials and an authorized sender, HTTPS/proxy configuration, monitoring and abuse tuning.
 
-Published-project editing, archive restoration, invitations, member removal and general ownership transfer are not implemented. Other sessions see changes on navigation, refetch or window focus; live push updates are deferred. Discovery uses bounded offset pagination and basic PostgreSQL substring search. Account emails use local Mailpit or configurable SMTP. Notifications, chat and AI features remain outside the current implementation.
+Published-project editing, archive restoration, invitations, member removal and general ownership transfer are not implemented. Other sessions see changes on navigation, refetch or window focus; live push updates are deferred. Discovery uses bounded offset pagination and basic PostgreSQL substring search. Account emails use local Mailpit, configurable SMTP or Brevo HTTPS. Notifications, chat and AI features remain outside the current implementation.
 
 ## Account verification and recovery
 
@@ -195,13 +195,16 @@ Signup collects account details, sends a six-digit email code and creates the ac
 
 Existing unverified accounts can confirm their email using the profile banner. Verified email is required to publish projects and submit new applications; profile editing, drafts and existing management remain available. Password recovery uses an expiring, single-use link and revokes all sessions after a successful reset.
 
-**Mailpit captures local messages at http://localhost:8025; it does not deliver to Gmail or other external inboxes. External inbox delivery is not configured yet.** Production email requires an authorized SMTP provider and sender. Authentication requests have persistent PostgreSQL-backed rate limits; SMTP delivery is bounded but has no durable retry queue.
+**Mailpit captures local messages at http://localhost:8025; it does not deliver to Gmail or other external inboxes.** External delivery can use Brevo HTTPS or an SMTP provider with private credentials and an authorized sender. Provider acceptance is separate from inbox delivery; external delivery must be verified manually. Authentication requests have persistent PostgreSQL-backed rate limits; email delivery is bounded but has no durable retry queue. See [email-provider setup](backend/EMAIL_DELIVERY.md).
 
-See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operations guide](backend/AUTHENTICATION.md) for code limits, CSRF, SMTP configuration and cleanup commands.
+On 2026-10-09, the maintainer manually confirmed Brevo signup-code receipt and account confirmation, plus recovery-email receipt and password reset. Automated tests use mocked Brevo requests or local Mailpit; they do not send external email.
+
+See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operations guide](backend/AUTHENTICATION.md) for code limits, CSRF, email configuration and cleanup commands.
 
 ## Detailed documentation
 
 - [Signup codes and local Mailpit walkthrough](backend/SIGNUP_CODES.md)
+- [Mailpit and Brevo HTTPS email delivery](backend/EMAIL_DELIVERY.md)
 - [Account security, recovery, verification and SMTP setup](backend/AUTHENTICATION.md)
 - [Backend setup, API contracts, security and database tests](backend/README.md)
 - [Frontend modes, session behavior and browser integration tests](frontend/API_MODE.md)

@@ -36,6 +36,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app):
+        logger.info(
+            "email_provider_configured",
+            extra={
+                "fields": {
+                    "provider": settings.email_provider,
+                    "api_key_present": bool(settings.brevo_api_key),
+                    "sender_present": bool(settings.brevo_sender_email),
+                }
+            },
+        )
         yield
         await engine.dispose()
 
@@ -62,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             request._body = b"".join(chunks)
         start = time.monotonic()
         request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
         try:
             response = await call_next(request)
         except Exception:

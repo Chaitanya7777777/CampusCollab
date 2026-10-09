@@ -80,11 +80,29 @@ async def issue(db, user_id, purpose, ttl):
 
 async def request_email(request, db, email, purpose):
     settings = request.app.state.settings
-    # Same bounded response floor for unknown accounts and SMTP failures. This is not a
+    fields = {
+        "purpose": purpose,
+        "request_id": getattr(request.state, "request_id", None),
+    }
+    logger = logging.getLogger("campuscollab")
+    # Same bounded response floor for unknown accounts and provider failures. This is not a
     # guarantee of constant timing under database/network congestion.
     loop = asyncio.get_running_loop()
     started = loop.time()
-    await limit(request, "reset-request" if purpose == "reset" else "verify-request", email)
+    try:
+        await limit(request, "reset-request" if purpose == "reset" else "verify-request", email)
+    except HTTPException as error:
+        if error.status_code == 429:
+            logger.info(
+                "authentication_email_not_sent",
+                extra={
+                    "fields": {
+                        **fields,
+                        "reason": "rate_limited",
+                    }
+                },
+            )
+        raise
     user_id = await db.scalar(
         select(User.id).where(User.email == email, User.sample_seed.is_(None))
     )
@@ -96,10 +114,30 @@ async def request_email(request, db, email, purpose):
             token = await issue(db, user_id, purpose, ttl)
             if token:
                 await send_safely(request, email, purpose, token)
+            else:
+                logger.info(
+                    "authentication_email_not_sent",
+                    extra={
+                        "fields": {
+                            **fields,
+                            "reason": "not_eligible",
+                        }
+                    },
+                )
         except Exception:
             await db.rollback()
-            logging.getLogger("campuscollab").error("authentication_email_issuance_failed")
-    await asyncio.sleep(max(0, settings.smtp_timeout_seconds - (loop.time() - started)))
+            logger.error("authentication_email_issuance_failed", extra={"fields": fields})
+    else:
+        logger.info(
+            "authentication_email_not_sent",
+            extra={
+                "fields": {
+                    **fields,
+                    "reason": "not_eligible",
+                }
+            },
+        )
+    await asyncio.sleep(max(0, settings.email_timeout_seconds - (loop.time() - started)))
     return {"message": GENERIC}
 
 

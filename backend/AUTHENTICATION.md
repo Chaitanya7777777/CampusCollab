@@ -20,6 +20,8 @@ Migration `0004_auth_recovery` adds `users.email_verified_at`, `auth_tokens`, an
 
 ## Configuration
 
+For explicit SMTP/Mailpit or Brevo HTTPS selection, private credentials, restart commands and delivery diagnostics, see [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md).
+
 | Variable | Default / meaning |
 | --- | --- |
 | `FRONTEND_BASE_URL` | `http://localhost:3000`; one validated origin, no redirects or paths; HTTPS in production |
@@ -28,7 +30,7 @@ Migration `0004_auth_recovery` adds `users.email_verified_at`, `auth_tokens`, an
 | `SMTP_HOST`, `SMTP_PORT` | `127.0.0.1`, `1025` for Mailpit |
 | `SMTP_FROM` | `CampusCollab <noreply@campuscollab.local>`; replace with an authorized production sender |
 | `SMTP_USERNAME`, `SMTP_PASSWORD` | Optional private provider credentials; never put these in frontend variables |
-| `SMTP_TLS` | `none` locally; `starttls` or `tls` required in production, with certificate validation |
+| `SMTP_TLS` | `none` locally; `starttls` or `tls` required for SMTP in production, with certificate validation |
 | `SMTP_TIMEOUT_SECONDS` | `5`; total delivery deadline and per-operation timeout, configurable 1–10 seconds |
 | `TRUSTED_PROXY_NETWORKS` | JSON list of explicit proxy IPs/CIDRs; default `[]`, wildcard networks rejected |
 | `RATE_WINDOW_SECONDS` | `900` (15-minute fixed window starting at first request) |
@@ -58,7 +60,7 @@ All endpoints below are under `/api/v1/auth`, accept JSON, and require the exist
 
 | POST route | Input | Result |
 | --- | --- | --- |
-| `/password-reset/request` | `email` | Same generic 200/message for unknown/known addresses, including SMTP errors |
+| `/password-reset/request` | `email` | Same generic 200/message for unknown/known addresses, including provider errors |
 | `/password-reset/confirm` | `token`, `password` | Consume reset token, change Argon2 hash, revoke **all** sessions atomically; login required |
 | `/verification/request` | `email` | Generic response for unknown, unverified and already-verified accounts; rate limited |
 | `/verification/confirm` | `token` | Consume verification token and set email verification timestamp; never establishes a session |
@@ -69,7 +71,7 @@ Links use `FRONTEND_BASE_URL` and a `#token=...` fragment. The browser reads the
 
 Tokens are random 256-bit values; PostgreSQL stores only SHA-256 hashes, purpose, user, creation/expiry/consumption timestamps. Issuance locks the user and invalidates earlier tokens of that purpose. Consumption locks the user then token, rechecks expiry/consumption, and commits all changes together. Login also locks the user before password verification/session creation so a reset cannot race an old-password login into a surviving session. Single-use rules hold across independent connections/workers.
 
-Link-email sends occur after token commits; signup codes are sent after pending-registration commits, before any account exists. There is **no durable retry queue**. Public request responses are generic even on delivery failure; a response floor equal to the SMTP timeout reduces account-specific timing differences but cannot promise constant timing under congestion. Operational logs record a fixed delivery-failure event without recipient, token or exception details. Templates contain plain text and escaped HTML, purpose, expiry and an ignore-if-unrequested note. See [aiosmtplib TLS/timeout API](https://aiosmtplib.readthedocs.io/en/v5.1.3/reference.html) and [Mailpit Docker documentation](https://mailpit.axllent.org/docs/install/docker/).
+Link-email sends occur after token commits; signup codes are sent after pending-registration commits, before any account exists. There is **no durable retry queue**. Public request responses are generic even on delivery failure; a response floor equal to the selected provider timeout reduces account-specific timing differences but cannot promise constant timing under congestion. Operational logs record a fixed delivery-failure event without recipient, token or exception details. Templates contain plain text and escaped HTML, purpose, expiry and an ignore-if-unrequested note. See [aiosmtplib TLS/timeout API](https://aiosmtplib.readthedocs.io/en/v5.1.3/reference.html) and [Mailpit Docker documentation](https://mailpit.axllent.org/docs/install/docker/).
 
 ## Cleanup and manual walkthrough
 
@@ -80,7 +82,7 @@ From `backend/`, run `.venv/Scripts/python.exe -m app.cleanup_auth` to delete ex
 3. Open a separate browser session, choose **Forgot password?**, and request a reset. Open the latest reset email, enter/confirm a new password and submit.
 4. Reload the old session: protected pages require login. Log in with the new password. Profile/project/application data remains intact. Email verification state is unchanged by reset.
 
-Use only fictional accounts in Mailpit. Do not forward tokens, passwords or provider secrets to support/chat. Production still requires SMTP credentials, an authorized sender/domain, provider delivery configuration, secure hosting/proxy validation, monitoring and abuse tuning. No real production email delivery has been claimed or tested.
+Use only fictional accounts in Mailpit. Do not forward tokens, passwords or provider secrets to support/chat. Production still requires configured Brevo or SMTP credentials, an authorized sender/domain, provider delivery configuration, secure hosting/proxy validation, monitoring and abuse tuning. No real production email delivery has been claimed or tested.
 
 ## Tests
 
@@ -94,4 +96,4 @@ Use the dedicated database and guards in [README](README.md#checks-and-dedicated
 - Development migration reached `0004_auth_recovery` without a reset. Development/test PostgreSQL and local Mailpit were healthy. Browser workflows used SMTP to Mailpit, unique fictional accounts and the separate guarded test database.
 - Initial browser checks exposed a duplicate React key in the new banner, a navigation timing assumption in a test, and Mailpit reverse-DNS delays. These were corrected and affected checks rerun. Public email requests also preserve generic responses when token issuance rolls back.
 
-No remaining local verification blocker. Production SMTP credentials/sender authorization, HTTPS/ingress proxy validation, operational scheduling/monitoring and pilot limit tuning remain required. In-process mail has no durable retry queue. No commit or push was performed.
+No remaining local verification blocker. Production provider credentials/sender authorization, HTTPS/ingress proxy validation, operational scheduling/monitoring and pilot limit tuning remain required. In-process mail has no durable retry queue. No commit or push was performed.
