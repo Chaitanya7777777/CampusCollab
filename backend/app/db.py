@@ -5,17 +5,28 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import Settings
+from app.database_url import connection_options
 
 
 class Base(DeclarativeBase):
     pass
 
 
-def database(settings: Settings):
+def database(settings: Settings, *, migration: bool = False):
+    value = (
+        settings.migration_database_url
+        if migration and settings.migration_database_url
+        else settings.database_url
+    )
+    url, args = connection_options(value.get_secret_value(), settings.database_tls)
     engine = create_async_engine(
-        settings.database_url.get_secret_value(),
+        url,
         pool_pre_ping=True,
-        connect_args={"timeout": 5, "command_timeout": 10},
+        pool_size=settings.database_pool_size,
+        max_overflow=0,
+        pool_timeout=10,
+        pool_recycle=300,
+        connect_args=args,
         hide_parameters=True,
     )
     return engine, async_sessionmaker(engine, expire_on_commit=False)

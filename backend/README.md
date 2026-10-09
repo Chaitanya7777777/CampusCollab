@@ -1,5 +1,7 @@
 # CampusCollab backend
 
+For the prepared Render Free/Neon/Vercel configuration, use the [deployment guide](../DEPLOYMENT.md). Production now requires authenticated frontend forwarding, explicit hosts/origin, verified database TLS and Brevo HTTPS. Local settings and the guarded test database remain separate.
+
 Email delivery supports local SMTP/Mailpit and Brevo HTTPS. See [EMAIL_DELIVERY.md](EMAIL_DELIVERY.md) for private configuration, restart commands and safe delivery diagnostics.
 
 New signup uses email codes before account creation. See [SIGNUP_CODES.md](SIGNUP_CODES.md) for endpoints, local Mailpit steps, limits and migration details.

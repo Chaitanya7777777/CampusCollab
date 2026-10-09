@@ -137,6 +137,8 @@ No environment blockers remain. The local real application/team workflow is impl
 
 ## Returning to a browser tab
 
+Hosted API mode uses the [same-origin forwarding route](../DEPLOYMENT.md) with `NEXT_PUBLIC_API_BASE_URL=/api/v1`. The Render origin and forwarding credential remain server-only. Local direct-API mode remains supported; `playwright.proxy.config.ts` tests the forwarding path against guarded PostgreSQL and Mailpit.
+
 API mode revalidates `/auth/me` on window focus or when a tab becomes visible. Routine checks keep the current page and query cache mounted. Once the same account is confirmed, active queries refresh in the background with their existing data, preserving scroll, filters and unsaved editor values. Duplicate focus/visibility events share an in-progress check. TanStack's independent focus refetch remains disabled in API mode so identity is checked first; mock mode retains its existing query focus-refetch behavior.
 
 Initial session restoration, explicit session-change broadcasts and session-expiry events still clear private caches. A different identity or signed-out response clears the prior account's data; a failed session check surfaces an error instead of substituting a demo identity or silently signing out. Mutation invalidation remains unchanged. This does not use scroll restoration timers or suppress backend session checks.

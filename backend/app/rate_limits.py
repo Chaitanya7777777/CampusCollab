@@ -13,6 +13,9 @@ from app.models import RateBucket
 
 
 def client_ip(request: Request) -> str:
+    if request.app.state.settings.api_proxy_secret:
+        # Only the credential-checking API middleware can populate this value.
+        return request.state.verified_client_ip
     # Run Uvicorn with --no-proxy-headers; inspect the actual immediate peer here.
     peer = request.client.host if request.client else "unknown"
     networks = [ip_network(n) for n in request.app.state.settings.trusted_proxy_networks]

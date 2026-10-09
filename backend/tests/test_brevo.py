@@ -102,6 +102,10 @@ def test_production_brevo_uses_https_not_smtp_tls():
         cookie_secure=True,
         allowed_origins=["https://campus.example.com"],
         frontend_base_url="https://campus.example.com",
+        api_proxy_secret="test-only-private-proxy-secret-00000000",
+        allowed_hosts=["api.example.com"],
+        database_tls=True,
+        database_url="postgresql+asyncpg://test:test@ep-test.neon.tech/test",
     )
     assert config.smtp_tls == "none" and config.email_timeout_seconds == 1
     with pytest.raises(ValidationError):

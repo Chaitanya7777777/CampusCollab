@@ -203,6 +203,8 @@ See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operat
 
 ## Detailed documentation
 
+- [Free-hosting deployment preparation: Vercel, Render and Neon](DEPLOYMENT.md)
+
 - [Signup codes and local Mailpit walkthrough](backend/SIGNUP_CODES.md)
 - [Mailpit and Brevo HTTPS email delivery](backend/EMAIL_DELIVERY.md)
 - [Account security, recovery, verification and SMTP setup](backend/AUTHENTICATION.md)

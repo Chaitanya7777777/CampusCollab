@@ -1,8 +1,10 @@
+import hmac
 import json
 import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from ipaddress import ip_address
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -10,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app import applications, auth, mail, profiles, projects, recovery, registration, skills
 from app.config import Settings
@@ -61,6 +64,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.middleware("http")
     async def request_log(request: Request, call_next):
+        if request.url.path.startswith("/api/v1") and settings.api_proxy_secret:
+            supplied = request.headers.get("x-campuscollab-proxy", "")
+            expected = settings.api_proxy_secret.get_secret_value()
+            if not hmac.compare_digest(supplied.encode(), expected.encode()):
+                return JSONResponse(
+                    {"detail": "Forbidden"}, status_code=403, headers={"Cache-Control": "no-store"}
+                )
+            try:
+                request.state.verified_client_ip = str(
+                    ip_address(request.headers.get("x-campuscollab-client-ip", ""))
+                )
+            except ValueError:
+                return JSONResponse(
+                    {"detail": "Forbidden"}, status_code=403, headers={"Cache-Control": "no-store"}
+                )
         if request.url.path.startswith("/api/v1/auth/") and request.method == "POST":
             size = 0
             chunks = []
@@ -104,6 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type", "X-CSRF-Token"],
         expose_headers=["X-Request-ID", "Retry-After"],
     )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(request, exc):

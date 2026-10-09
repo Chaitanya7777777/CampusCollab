@@ -1,6 +1,7 @@
 import asyncio
 
 from alembic import context
+from sqlalchemy import text
 
 from app import models  # noqa: F401
 from app.config import Settings
@@ -16,10 +17,19 @@ def migrate(connection):
 
 
 async def online():
-    engine, _ = database(Settings())
+    engine, _ = database(Settings(), migration=True)
     try:
         async with engine.connect() as connection:
-            await connection.run_sync(migrate)
+            # Session-level lock on a direct connection survives Alembic commits.
+            # command_timeout bounds lock acquisition; failure aborts startup.
+            await connection.execute(text("SELECT pg_advisory_lock(734820192)"))
+            await connection.commit()
+            try:
+                await connection.run_sync(migrate)
+            finally:
+                await connection.rollback()
+                await connection.execute(text("SELECT pg_advisory_unlock(734820192)"))
+                await connection.commit()
     finally:
         await engine.dispose()
 

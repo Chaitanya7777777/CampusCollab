@@ -51,7 +51,7 @@ export class ApiClient {
   ): Promise<unknown> {
     const epoch = this.epoch;
     let response: Response;
-    const timeout = AbortSignal.timeout(15000);
+    const timeout = AbortSignal.timeout(25000);
     const signal = init.signal
       ? AbortSignal.any([init.signal, timeout])
       : timeout;
@@ -122,9 +122,12 @@ export class ApiClient {
                     : "An account with this email already exists. Sign in instead."
                   : response.status === 422
                     ? "Some fields were rejected. Check their format and length, then try again."
-                    : response.status >= 500
-                      ? "The backend is temporarily unavailable. Please try again."
-                      : "The request was not permitted. Please refresh your session and try again.");
+                    : response.status === 503 &&
+                        detail.startsWith("Backend is waking up")
+                      ? "The backend may be waking up. Wait a moment and try again. Before repeating a save or application, refresh to check whether it completed."
+                      : response.status >= 500
+                        ? "The backend is temporarily unavailable. Please try again."
+                        : "The request was not permitted. Please refresh your session and try again.");
       throw new ApiError(message, response.status, detail);
     }
     return data;

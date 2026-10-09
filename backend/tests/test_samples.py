@@ -26,7 +26,11 @@ def test_sample_cli_refuses_hosted_and_test_targets():
         "postgresql+asyncpg://campuscollab_test:x@127.0.0.1:5433/campuscollab_test",
         "postgresql+asyncpg://campuscollab:x@127.0.0.1:5432/campuscollab?host=elsewhere",
     ):
-        config = settings(url).model_copy(update={"app_env": "development"})
+        from pydantic import SecretStr
+
+        config = settings().model_copy(
+            update={"app_env": "development", "database_url": SecretStr(url)}
+        )
         with pytest.raises(RuntimeError, match="expected local"):
             guard_local(config)
     guard_local(

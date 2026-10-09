@@ -13,6 +13,11 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     database_url: SecretStr
     csrf_secret: SecretStr
+    api_proxy_secret: SecretStr | None = None
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1", "testserver"]
+    database_tls: bool = False
+    migration_database_url: SecretStr | None = None
+    database_pool_size: int = Field(default=3, ge=1, le=5)
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8000"]
     session_ttl_seconds: int = Field(default=604800, ge=60, le=2592000)
     csrf_ttl_seconds: int = Field(default=3600, ge=60, le=86400)
@@ -87,8 +92,54 @@ class Settings(BaseSettings):
         secret = self.csrf_secret.get_secret_value()
         if len(secret) < 32 or secret.startswith("replace-"):
             raise ValueError("Set a random CSRF_SECRET of at least 32 characters")
-        if make_url(self.database_url.get_secret_value()).drivername != "postgresql+asyncpg":
-            raise ValueError("DATABASE_URL must use postgresql+asyncpg")
+        from app.database_url import connection_options
+
+        for value in (self.database_url, self.migration_database_url):
+            if value:
+                connection_options(value.get_secret_value(), self.database_tls)
+        if self.migration_database_url:
+            app_url = make_url(self.database_url.get_secret_value())
+            migration_url = make_url(self.migration_database_url.get_secret_value())
+            if (app_url.host, app_url.port or 5432, app_url.database) != (
+                migration_url.host,
+                migration_url.port or 5432,
+                migration_url.database,
+            ):
+                raise ValueError("Migration connection must target the application database")
+        if self.api_proxy_secret:
+            proxy = self.api_proxy_secret.get_secret_value()
+            if (
+                len(proxy) < 32
+                or proxy.startswith("replace-")
+                or not proxy.isascii()
+                or any(c.isspace() for c in proxy)
+            ):
+                raise ValueError("Set a random private API_PROXY_SECRET")
+        if not self.allowed_hosts or any(
+            "*" in h or ":" in h or "/" in h for h in self.allowed_hosts
+        ):
+            raise ValueError("ALLOWED_HOSTS must contain explicit hostnames")
+        if self.app_env == "production":
+            if self.email_provider != "brevo":
+                raise ValueError("Production hosting requires Brevo HTTPS delivery")
+            if not self.api_proxy_secret or self.trusted_proxy_networks:
+                raise ValueError(
+                    "Production requires authenticated proxy forwarding, not network trust"
+                )
+            if self.allowed_origins != [self.frontend_base_url.rstrip("/")] or front.hostname in (
+                "localhost",
+                "127.0.0.1",
+            ):
+                raise ValueError("Production requires one explicit public frontend origin")
+            if any(h in ("localhost", "127.0.0.1", "testserver") for h in self.allowed_hosts):
+                raise ValueError("Set public production ALLOWED_HOSTS")
+            if not self.database_tls or self.cookie_samesite != "lax":
+                raise ValueError("Production requires verified database TLS and SameSite=lax")
+            for value in (self.database_url, self.migration_database_url):
+                if value:
+                    host = make_url(value.get_secret_value()).host or ""
+                    if host in ("localhost", "127.0.0.1") or not host or "-pooler" in host:
+                        raise ValueError("Use a remote direct database endpoint in production")
         if not self.allowed_origins:
             raise ValueError("Explicit allowed origins are required")
         for origin in self.allowed_origins:

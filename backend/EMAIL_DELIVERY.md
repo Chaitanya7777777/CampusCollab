@@ -2,6 +2,8 @@
 
 All signup codes, password resets and existing-account verification emails use the same email service and templates. `EMAIL_PROVIDER` explicitly selects `smtp` (the default, including local Mailpit) or `brevo` (HTTPS). A provider failure never falls back to another provider.
 
+The [prepared free-hosting configuration](../DEPLOYMENT.md) requires Brevo in production because Render Free blocks SMTP ports. SMTP/Mailpit remains available for development and tests. Production also requires the proxy, host, cookie and database settings in that guide; email settings alone are insufficient.
+
 ## Private configuration
 
 Edit the ignored `backend/.env` in your editor, preserving its other settings. Never put credentials in frontend variables, source code, chat or shell history. The tracked [.env.example](.env.example) contains placeholders only.

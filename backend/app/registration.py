@@ -114,6 +114,10 @@ def valid(row, settings):
 
 async def locked_registration(request, db, id, action):
     email = await db.scalar(select(PendingRegistration.email).where(PendingRegistration.id == id))
+    # Release the lookup connection before independent rate-limit accounting.
+    # A bounded pool must not deadlock when concurrent requests each hold a
+    # connection while waiting for another. State is re-read under locks below.
+    await db.rollback()
     # Unknown identifiers still consume the common IP budget, without arbitrary email buckets.
     await limit(request, action, email)
     if email is None:

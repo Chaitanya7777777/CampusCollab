@@ -29,6 +29,7 @@ async def main():
     settings = Settings(
         _env_file=None,
         app_env="test",
+        api_proxy_secret=os.environ.get("BROWSER_PROXY_SECRET") or None,
         email_provider="smtp",
         smtp_host="127.0.0.1",
         smtp_port=1025,
