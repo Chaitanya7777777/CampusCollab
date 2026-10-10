@@ -1,6 +1,10 @@
-# Free hosting preparation
+# Deployment and operations
 
-Target: **Vercel Hobby** (Next.js), **Render Free** (FastAPI), **Neon Free** (PostgreSQL), existing **Brevo HTTPS** delivery. No resources are provisioned by this repository. Local development data, users, sessions, projects and applications are **not transferred**. Mock mode remains a separate local prototype.
+Live website: **[CampusCollab](https://campus-collab-beryl.vercel.app)**.
+
+Hosting: **Vercel Hobby** (Next.js), **Render Free, Singapore** (FastAPI), **Neon PostgreSQL, Singapore**, and **Brevo HTTPS** email delivery. The maintainer reports successful deployed-site use, including the hosted catalog and imported projects, on 2026-10-10. This report is separate from automated local checks and is not a claim that every hosted workflow or failure scenario was tested.
+
+Local accounts, credentials, sessions, applications and team activity are not transferred. An explicitly authorized catalog seed and curated-project import populated hosted records; see the [import operations guide](backend/CURATED_IMPORT.md). Mock mode remains separate. These instructions also document how to reproduce the deployment; nothing provisions resources automatically.
 
 ## Request and trust boundary
 
@@ -18,7 +22,7 @@ Use Vercel directly, with no additional reverse proxy in front. Do not enable wi
 4. Configure Vercel and deploy the frontend when authorized. Set the proxy secret identically on both providers. Production preview deployments must not inherit live database/proxy credentials; preview URLs are intentionally rejected. Use mock mode or an isolated environment for previews.
 5. Run the manual smoke test below. A health check alone does not verify cookies, email delivery, or the team workflow.
 
-No custom domains, GitHub Actions, paid shell, pre-deploy command, queue or worker is needed. Provider account creation, connection to GitHub and clicking Deploy are manual steps; none have been performed here.
+No custom domains, GitHub Actions, paid shell, pre-deploy command, queue or worker is needed. Provider setup is manual. Pushes to the connected branch may trigger provider auto-deploys when enabled; committing operational scripts does not execute them.
 
 ## Render settings
 
@@ -130,7 +134,7 @@ Checked against official documentation on 2026-10-09:
 - [Neon's current Free-plan announcement](https://neon.com/blog/neon-free-plan-1-gb-per-project) lists 1 GB storage and 100 CU-hours per project/month. Idle compute can suspend; verify the current dashboard quotas and network-transfer limits before rollout. Do not enable a paid plan to exceed them.
 - Brevo delivery remains subject to your account's approval, sender authorization and free quota. No durable email retry queue exists.
 
-The project owner has created Neon in Singapore. No hosted deployment or Neon connectivity has been verified; local tests do not validate provider resources. Existing manual Brevo inbox checks cover the local configuration, not hosted link origins or hosted sending. Production platform logs and access controls must still be reviewed for sensitive data exposure.
+Authorized hosted database checks confirmed migration `0007_project_conversion`, a 28-skill catalog, and nine imported projects with 18 roles and nine actual owner memberships. Repeated seed/import runs preserved counts and IDs. No hosted test applications or emails were sent by those checks. The maintainer separately reports the deployed website works; the detailed multi-account smoke test above remains a checklist, not an assertion of completed coverage. Platform logs, quotas and access controls still need ongoing review.
 
 ## Local verification commands
 

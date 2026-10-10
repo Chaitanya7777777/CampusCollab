@@ -1,10 +1,14 @@
 # CampusCollab
 
+**[Open CampusCollab](https://campus-collab-beryl.vercel.app)**
+
 CampusCollab helps university students discover projects and hackathons, apply for specific contribution roles, and form teams. It connects project discovery with a structured recruitment workflow, from a student's profile to a confirmed team membership.
 
 **Create profile → publish project → discover → apply → owner reviews → accept → join team**
 
 The core workflow runs against a FastAPI and PostgreSQL backend. A separate mock mode provides a local prototype without requiring backend services.
+
+Hosted on **Vercel Hobby**, **Render Free (Singapore)** and **Neon PostgreSQL (Singapore)**, with **Brevo HTTPS** email delivery. Free-tier cold starts can delay the first API request; wait and retry, checking saved state before repeating a submission.
 
 ## Why CampusCollab exists
 
@@ -26,7 +30,7 @@ The public landing page introduces the product. Account and project screens adap
 
 ```mermaid
 flowchart LR
-    UI["Browser / Next.js"] -->|"HTTP API: cookie session + CSRF"| API["FastAPI"]
+    UI["Browser / Next.js"] -->|"Same-origin forwarding: cookie session + CSRF"| API["FastAPI"]
     API -->|"Async SQLAlchemy / asyncpg"| DB[(PostgreSQL)]
 ```
 
@@ -93,7 +97,7 @@ cd backend
 .venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --no-access-log --no-proxy-headers
 ```
 
-Run backend commands from `backend/` so settings find `.env`. Alembic applies the identity, project, application and account-protection migrations; startup does not create tables. Skill seeding is explicit and idempotent and does not create demo accounts.
+Run backend commands from `backend/` so settings find `.env`. Local startup does not create tables; run Alembic explicitly. The production entry point applies migrations before serving. Skill seeding is explicit and idempotent and does not create accounts.
 
 Development PostgreSQL uses `127.0.0.1:5432` and the named `postgres_data` volume. `docker compose stop` preserves its data. Compose credentials are local examples, not production credentials. Keep real environment files out of Git.
 
@@ -185,7 +189,7 @@ Coverage includes session/CSRF behavior, authorization and private data access, 
 
 ## Current limitations and next steps
 
-The core local workflow is implemented, but the repository is not presented as a production-ready deployment. Email verification, password recovery and PostgreSQL-backed authentication rate limits are implemented. Production still requires configured email-provider credentials and an authorized sender, HTTPS/proxy configuration, monitoring and abuse tuning.
+The core workflow is deployed, including email-code signup, password recovery and PostgreSQL-backed authentication rate limits. This student MVP still needs broader operational hardening, monitoring and abuse tuning; free hosting is not an availability guarantee.
 
 Published-project editing, archive restoration, invitations, member removal and general ownership transfer are not implemented. Other sessions see changes on navigation, refetch or window focus; live push updates are deferred. Discovery uses bounded offset pagination and basic PostgreSQL substring search. Account emails use local Mailpit, configurable SMTP or Brevo HTTPS. Notifications, chat and AI features remain outside the current implementation.
 
@@ -197,14 +201,13 @@ Existing unverified accounts can confirm their email using the profile banner. V
 
 **Mailpit captures local messages at http://localhost:8025; it does not deliver to Gmail or other external inboxes.** External delivery can use Brevo HTTPS or an SMTP provider with private credentials and an authorized sender. Provider acceptance is separate from inbox delivery; external delivery must be verified manually. Authentication requests have persistent PostgreSQL-backed rate limits; email delivery is bounded but has no durable retry queue. See [email-provider setup](backend/EMAIL_DELIVERY.md).
 
-On 2026-10-09, the maintainer manually confirmed Brevo signup-code receipt and account confirmation, plus recovery-email receipt and password reset. Automated tests use mocked Brevo requests or local Mailpit; they do not send external email.
+The maintainer reports that the deployed website works, including its hosted skill catalog and imported projects (2026-10-10). This is manual verification, separate from automated local tests, which use mocked Brevo requests or Mailpit and do not send external email. Detailed deployment and verification records are in the [deployment guide](DEPLOYMENT.md).
 
 See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operations guide](backend/AUTHENTICATION.md) for code limits, CSRF, email configuration and cleanup commands.
 
 ## Detailed documentation
 
-- [Free-hosting deployment preparation: Vercel, Render and Neon](DEPLOYMENT.md)
-
+- [Deployment and operations: Vercel, Render and Neon](DEPLOYMENT.md)
 - [Signup codes and local Mailpit walkthrough](backend/SIGNUP_CODES.md)
 - [Mailpit and Brevo HTTPS email delivery](backend/EMAIL_DELIVERY.md)
 - [Account security, recovery, verification and SMTP setup](backend/AUTHENTICATION.md)
@@ -212,4 +215,4 @@ See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operat
 - [Frontend modes, session behavior and browser integration tests](frontend/API_MODE.md)
 - [Local PostgreSQL services](compose.yaml)
 - [Backend environment template](backend/.env.example) and [frontend environment template](frontend/.env.example)
-- [Local seeded-project conversion and maintenance](backend/SAMPLE_PROJECTS.md)
+- [Authorized curated-project import](backend/CURATED_IMPORT.md)
