@@ -39,11 +39,11 @@ Login/signup retain backend validation and add independent password visibility c
 
 ## Behavior and implementation
 
-- `/signup` creates an account and establishes a session; `/login` signs in; both open `/profile`. Mock mode explains that these screens require API mode.
+- `/signup` sends an email code and creates the account/session only after code confirmation; `/login` signs in; both open `/profile`. Mock mode explains that these screens require API mode.
 - Startup `/auth/me` restores identity. A 401 means signed out; unavailable/malformed responses show a retryable error. API mode never falls back to mock data. Protected profile content stays hidden during restoration.
 - Logout calls backend revocation before clearing private caches and redirecting. Failed logout remains visible and recoverable.
 - The client sends `credentials: include`, bootstraps CSRF, and keeps the returned token only in memory. It refreshes after cookie changes. Only the exact backend `403` detail `Invalid or expired CSRF token` triggers a token refresh and an explicit retry prompt. No mutation is automatically replayed; other 403s, network failures and server errors are not retried.
-- Auth changes cancel/clear TanStack Query data. Profile keys include user IDs, forms remount when identity changes, and stale response generations are rejected. BroadcastChannel synchronizes same-origin tabs; window focus rechecks identity (also when BroadcastChannel is unavailable). Rechecking discards unsaved forms so they cannot migrate to a different account. No passwords or authentication tokens are stored in browser storage.
+- Auth changes cancel/clear TanStack Query data. Profile keys include user IDs, forms remount when identity changes, and stale response generations are rejected. BroadcastChannel synchronizes same-origin tabs; window focus rechecks identity (also when BroadcastChannel is unavailable). Background identity rechecks preserve same-account content and unsaved forms; an actual identity change clears private state. No passwords or authentication tokens are stored in browser storage.
 - The shared profile editor supports null optional values and zero skills. Only changed fields enter PATCH; clearing a nullable field sends null, while clearing skills sends `[]`. Email is read-only. A successful save updates the shell's name/avatar and persists across reload/login.
 - API mode enables Discover, Create Project, Edit Draft, Project Details, My Projects and owner Overview/Team/Settings using PostgreSQL data only. My Applications, role-specific submission, owner review, acceptance/rejection, and withdrawal are enabled. Real profiles show no fictional projects, memberships or team counts.
 
@@ -69,7 +69,7 @@ Other checks: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e
 
 ## Manual walkthrough
 
-1. Open `/signup`, enter a name, unique fictional email and matching 12–128 character password. Submit; `/profile` opens with empty optional fields and zero skills.
+1. Open `/signup`, enter a name, unique fictional email and matching 12–128 character password. Send a code, read it in local Mailpit, then confirm; `/profile` opens with empty optional fields and zero skills.
 2. Set a university or bio, select catalog skills, and Save changes. Confirm the success message; reload and check the values.
 3. Log out. Visiting `/profile` sends you to `/login` without showing the previous profile.
 4. Log in with the same credentials. Confirm saved profile/skills and updated name remain.
@@ -154,3 +154,7 @@ Token links use fragments, are read only into memory, and are removed from the v
 Start Mailpit with `docker compose up -d --wait mailpit` and open http://localhost:8025. The guarded real browser suite now uses local SMTP mail for verification before publishing/applying, and reset/re-login workflows. Keep API traces, video and screenshots disabled for token steps. See [authentication configuration and walkthrough](../backend/AUTHENTICATION.md). Brevo HTTPS and SMTP provider setup, including maintainer-reported manual delivery verification, is documented in [the email delivery guide](../backend/EMAIL_DELIVERY.md). Automated browser tests remain local Mailpit only.
 
 Authentication protection verification (2026-10-06): lint/typecheck, 52 unit tests, 20 real API browser tests and 29 mock browser tests passed with no skips. Both production modes built successfully. Four focused recovery checks passed after the final verified-account messaging update; these also check the token-page Referrer-Policy and mobile overflow. Only empty, token-free recovery forms were captured for visual inspection. Full backend results and local setup limitations are recorded in [the authentication guide](../backend/AUTHENTICATION.md#executed-validation--2026-10-06).
+
+## Shared skill creation
+
+Profile and recruitment-role editors share a searchable selector. Explicit creation adds a shared catalog record and selects it without saving or resetting the enclosing form. API mode uses authoritative server matching and verified-user creation; mock mode stores additions locally. See [normalization, limits and rollout](../backend/SKILLS.md).

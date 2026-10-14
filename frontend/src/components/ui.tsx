@@ -33,7 +33,7 @@ export function SkillChip({
 }) {
   return (
     <span className={`skill-chip ${matched ? "matched" : ""}`}>
-      {name}
+      <span>{name}</span>
       {onRemove && (
         <button type="button" aria-label={`Remove ${name}`} onClick={onRemove}>
           <X size={14} />

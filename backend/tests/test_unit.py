@@ -208,7 +208,9 @@ def test_migration_generates_postgresql_ddl_without_database(monkeypatch):
     monkeypatch.setenv("CSRF_SECRET", settings().csrf_secret.get_secret_value())
     output = StringIO()
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"), output_buffer=output)
-    command.upgrade(config, "head", sql=True)
+    command.upgrade(config, "0007_project_conversion", sql=True)
+    with pytest.raises(RuntimeError, match="requires an online migration"):
+        command.upgrade(config, "0007_project_conversion:head", sql=True)
     sql = output.getvalue()
     for table in ("users", "profiles", "sessions", "skills", "user_skills"):
         assert f"CREATE TABLE {table}" in sql

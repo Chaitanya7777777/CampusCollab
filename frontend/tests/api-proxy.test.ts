@@ -176,3 +176,16 @@ it("preserves both logout deletions and does not share account responses", async
   expect(await a.json()).not.toEqual(await b.json());
   expect(b.headers.get("cache-control")).toContain("no-store");
 });
+
+it("forwards skill creation through the existing authenticated CSRF boundary", async () => {
+  const send = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ id: "skill-test", name: "Rust" }, { status: 201 }),
+    );
+  const result = await forwardApi(request("skills"), ["skills"], env, send);
+  expect(result.status).toBe(201);
+  expect(send.mock.calls[0][1].headers.get("cookie")).toBe("session=test");
+  expect(send.mock.calls[0][1].headers.get("x-csrf-token")).toBe("test-csrf");
+  expect(result.headers.get("cache-control")).toContain("no-store");
+});

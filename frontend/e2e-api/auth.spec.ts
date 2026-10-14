@@ -62,7 +62,9 @@ test("signup, optional profile, persistence, CSRF refresh, logout and re-login",
     .fill("Fictional API University");
   await page.getByRole("button", { name: "Add React", exact: true }).click();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Profile saved");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Profile saved" }),
+  ).toContainText("Profile saved");
   await page.getByLabel("College / university").fill("Discard this");
   await page.getByRole("button", { name: "Discard changes" }).click();
   await expect(page.getByLabel("College / university")).toHaveValue(
@@ -75,7 +77,9 @@ test("signup, optional profile, persistence, CSRF refresh, logout and re-login",
     "Security token refreshed",
   );
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Profile saved");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Profile saved" }),
+  ).toContainText("Profile saved");
   await page.reload();
   await expect(page.getByLabel("Full name")).toHaveValue("Saved API Student");
   await expect(
@@ -119,7 +123,9 @@ test("duplicate registration, incorrect login and account switching isolate priv
   await signup(page, first);
   await page.getByLabel("College / university").fill("Private First Campus");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("Profile saved");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Profile saved" }),
+  ).toContainText("Profile saved");
   const other = await context.newPage();
   await other.goto("/profile");
   await expect(other.getByLabel("College / university")).toHaveValue(

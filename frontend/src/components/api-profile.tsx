@@ -39,7 +39,7 @@ export function ApiProfileEditor() {
   }, [expired, restore]);
   if (!id || expired || profile.isPending || skills.isPending)
     return <Loading label="Loading your profile…" />;
-  if (profile.isError || skills.isError)
+  if (!profile.data || !skills.data)
     return (
       <ErrorState
         error={(profile.error ?? skills.error)!}
@@ -52,6 +52,15 @@ export function ApiProfileEditor() {
   const saved = profile.data;
   return (
     <div className="space-y-6">
+      {(profile.isError || skills.isError) && (
+        <ErrorState
+          error={(profile.error ?? skills.error)!}
+          retry={() => {
+            void profile.refetch();
+            void skills.refetch();
+          }}
+        />
+      )}
       <div>
         <p className="eyebrow mb-2">My profile / Information & skills</p>
         <h1>Student Profile Workspace</h1>

@@ -22,7 +22,7 @@ async def test_empty_database_migration_matches_models_and_seed_is_idempotent(da
     async with database_app.state.engine.connect() as connection:
         assert (
             await connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0007_project_conversion"
+            == "0008_skill_names"
         )
         differences = await connection.run_sync(
             lambda conn: compare_metadata(MigrationContext.configure(conn), Base.metadata)

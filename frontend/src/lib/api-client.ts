@@ -110,7 +110,7 @@ export class ApiClient {
         (response.status === 429
           ? `Too many attempts. Try again in ${Math.max(1, Math.ceil(Number(response.headers.get("Retry-After") || 900) / 60))} minute(s).`
           : detail === "email_verification_required"
-            ? "Verify your email from your profile before publishing or applying. You can still save a draft."
+            ? "Verify your email from your profile before publishing, applying, or adding a shared skill. You can still save a draft."
             : detail === "invalid_or_expired_link"
               ? "This link is invalid, expired, or already used. Request a new email and use its latest link."
               : response.status === 401
@@ -239,6 +239,20 @@ export class ApiClient {
   }
   async skills(signal?: AbortSignal) {
     return this.parse(catalogSchema, await this.request("/skills", { signal }));
+  }
+  async resolveSkill(name: string, signal?: AbortSignal) {
+    return this.parse(
+      z.object({ id: z.string(), name: z.string() }).nullable(),
+      await this.request(`/skills/resolve?name=${encodeURIComponent(name)}`, {
+        signal,
+      }),
+    );
+  }
+  async createSkill(name: string) {
+    return this.parse(
+      z.object({ id: z.string(), name: z.string() }),
+      await this.mutate("/skills", "POST", { name }),
+    );
   }
   async projectSession(signal?: AbortSignal) {
     const [profile, skills] = await Promise.all([

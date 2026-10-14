@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     rate_signup_limit: int = Field(default=5, ge=1, le=1000)
     rate_email_limit: int = Field(default=3, ge=1, le=1000)
     rate_token_limit: int = Field(default=10, ge=1, le=1000)
+    rate_skill_create_limit: int = Field(default=10, ge=1, le=100)
 
     @model_validator(mode="after")
     def secure_configuration(self):

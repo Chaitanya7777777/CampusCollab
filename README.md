@@ -18,7 +18,7 @@ CampusCollab makes those steps explicit: owners recruit for contribution roles, 
 
 ## Key capabilities
 
-- **Student profiles:** email-code signup before account creation, login/logout, email verification, password recovery, editable profiles and selection from a controlled skill catalog.
+- **Student profiles:** email-code signup before account creation, login/logout, email verification, password recovery, editable profiles and a shared skill catalog with verified-user additions from profile and recruitment-role forms.
 - **Project recruitment:** private drafts, publication, team capacity and repeatable roles with required skills and openings. Project types include Hackathon, Personal Project, Research, Startup and Open Source.
 - **Discovery:** search, skill/type/role/campus filters, availability filters, sorting and server-side pagination in API mode.
 - **Applications:** role-specific submissions, searchable application history, status filters and confirmed withdrawal. Owners review applications and accept or reject pending requests.
@@ -197,7 +197,7 @@ Published-project editing, archive restoration, invitations, member removal and 
 
 Signup collects account details, sends a six-digit email code and creates the account, profile and session only after successful confirmation. Codes expire after ten minutes; incorrect attempts and resends are limited. Ordinary login uses email and password, without a login code.
 
-Existing unverified accounts can confirm their email using the profile banner. Verified email is required to publish projects and submit new applications; profile editing, drafts and existing management remain available. Password recovery uses an expiring, single-use link and revokes all sessions after a successful reset.
+Existing unverified accounts can confirm their email using the profile banner. Verified email is required to publish projects, submit new applications and add shared skills; profile editing, drafts and existing management remain available. Password recovery uses an expiring, single-use link and revokes all sessions after a successful reset.
 
 **Mailpit captures local messages at http://localhost:8025; it does not deliver to Gmail or other external inboxes.** External delivery can use Brevo HTTPS or an SMTP provider with private credentials and an authorized sender. Provider acceptance is separate from inbox delivery; external delivery must be verified manually. Authentication requests have persistent PostgreSQL-backed rate limits; email delivery is bounded but has no durable retry queue. See [email-provider setup](backend/EMAIL_DELIVERY.md).
 
@@ -216,3 +216,5 @@ See the [signup walkthrough](backend/SIGNUP_CODES.md) and [authentication operat
 - [Local PostgreSQL services](compose.yaml)
 - [Backend environment template](backend/.env.example) and [frontend environment template](frontend/.env.example)
 - [Authorized curated-project import](backend/CURATED_IMPORT.md)
+
+Shared-skill creation has been manually verified locally by the maintainer, alongside automated local checks. It has not yet been verified on the deployed website. Its release requires the backend migration and endpoints before the frontend. See the [skill catalog guide](backend/SKILLS.md) for normalization, permissions, limits and rollout.

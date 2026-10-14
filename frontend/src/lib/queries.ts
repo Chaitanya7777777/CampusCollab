@@ -36,6 +36,23 @@ export const useSession = () =>
     queryFn: ({ signal }) =>
       API_MODE ? api.projectSession(signal) : mockApi.session(),
   });
+export function useCreateSkill() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      API_MODE ? api.createSkill(name) : mockApi.createSkill(name),
+    retry: false,
+    onSuccess: () => {
+      // Keep profile/draft objects mounted; only catalog-bearing queries refetch.
+      void client.invalidateQueries({
+        predicate: (q) =>
+          q.queryKey.includes("skills") ||
+          q.queryKey.includes("session") ||
+          q.queryKey.includes("projects"),
+      });
+    },
+  });
+}
 export const useDiscovery = (filters: DiscoveryFilters, page = 1) =>
   useQuery({
     queryKey: [useActor(), "projects", filters, page],

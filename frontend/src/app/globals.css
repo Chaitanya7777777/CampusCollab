@@ -1452,6 +1452,9 @@ nav[aria-label="Main navigation"] a[aria-current="page"] {
 }
 .skill-chip {
   display: inline-flex;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
   align-items: center;
   gap: 7px;
   border-radius: 20px;
@@ -1461,6 +1464,7 @@ nav[aria-label="Main navigation"] a[aria-current="page"] {
   line-height: 1.4;
 }
 .skill-chip button {
+  flex-shrink: 0;
   padding: 3px;
   margin: -3px -3px -3px 0;
   border-radius: 50%;
@@ -1787,6 +1791,8 @@ nav[aria-label="Main navigation"] a[aria-current="page"] {
   padding: 3px;
 }
 .catalog-options button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   background: #e6e8ff;
   font-size: 11px;
   padding: 6px 10px;

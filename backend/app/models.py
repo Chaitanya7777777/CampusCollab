@@ -97,9 +97,11 @@ class Session(Base):
 
 class Skill(Base):
     __tablename__ = "skills"
+    __table_args__ = (UniqueConstraint("normalized_name", name="uq_skills_normalized_name"),)
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True)
     slug: Mapped[str] = mapped_column(String(80), unique=True)
     name: Mapped[str] = mapped_column(String(80))
+    normalized_name: Mapped[str] = mapped_column(String(240))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

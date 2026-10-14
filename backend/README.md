@@ -12,7 +12,7 @@ Verified against real local PostgreSQL on **2026-10-02**: both Compose services 
 
 The live HTTP walkthrough passed: liveness/readiness, CSRF bootstrap, registration/current identity, profile and skill persistence, logout/401, login with saved profile, final logout/401, and missing-CSRF rejection/403. Existing `.env` and development data were preserved. One unique fictional verification account remains; both databases remain running, and only the temporary verification API server was stopped. Frontend authentication/profile integration is now implemented in API mode; production hardening remains deferred.
 
-FastAPI serves the frontend's explicit API mode for authentication, profiles, skills, projects, applications and team formation. Mock mode remains separate; no browser storage or fictional accounts are imported. The current migration head is `0007_project_conversion`; the dated verification records describe earlier milestones as well as the latest application milestone. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
+FastAPI serves the frontend's explicit API mode for authentication, profiles, skills, projects, applications and team formation. Mock mode remains separate; no browser storage or fictional accounts are imported. The current migration head is `0008_skill_names`; the dated verification records describe earlier milestones as well as the latest application milestone. See [frontend integration setup and browser tests](../frontend/API_MODE.md).
 
 ## Frontend integration verification
 
@@ -54,7 +54,7 @@ cd backend
 
 Run backend commands from `backend/` so settings find `.env`. API schemas: `http://localhost:8000/docs`. The placeholder secret intentionally fails configuration validation. Real environment files and virtual environments are ignored. Compose credentials are local examples, not production credentials. PostgreSQL binds only to `127.0.0.1:5432`, has a health check and persists in the named `postgres_data` volume. `docker compose stop` preserves data; do not remove the volume unless deliberately resetting it.
 
-Alembic owns schema changes; startup never creates tables. The explicit skill seed is transactional and idempotent. It creates 28 catalog skills, never accounts. Entity keys are UUIDs; `user_skills` has a composite primary key. API skill IDs retain frontend slugs (`react`, `c--`, `node-js`, etc.). Each maps to UUID5 using `NAMESPACE_URL` and `https://campuscollab.local/skills/{slug}`. Re-seeding updates names without replacing IDs.
+Alembic owns schema changes; startup never creates tables. The explicit skill seed is transactional and idempotent. It inserts the 28 initial catalog names when absent, never accounts. Entity keys are UUIDs; `user_skills` has a composite primary key. API skill IDs retain frontend slugs (`react`, `c--`, `node-js`, etc.). Each maps to UUID5 using `NAMESPACE_URL` and `https://campuscollab.local/skills/{slug}`. Re-seeding inserts missing records without renaming or replacing existing skills. User-created skills use opaque UUID-derived IDs; see [shared skills](SKILLS.md).
 
 ## API and security contract
 
@@ -71,6 +71,8 @@ Alembic owns schema changes; startup never creates tables. The explicit skill se
 | GET `/api/v1/auth/me` | Session-derived user ID, name, email, createdAt. |
 | GET/PATCH `/api/v1/profiles/me` | Current user's profile; no caller-selected user ID. |
 | GET `/api/v1/skills` | Public `{id, name}` catalog. |
+| GET `/api/v1/skills/resolve` | Authoritative normalized-name lookup. |
+| POST `/api/v1/skills` | Verified-user create-or-get, 201/200; CSRF and per-account rate limit. |
 
 Email is trimmed and lowercased in full, with a database unique constraint. Concurrent duplicates return 409 without partial records. Passwords are 12–128 characters at registration and hashed with Argon2id. Sessions use random 256-bit opaque tokens; only SHA-256 token hashes are stored. Expiry and revocation are checked against the database. Multiple sessions are supported; logout only revokes the current one. Tokens never appear in JSON or localStorage.
 

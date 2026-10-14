@@ -1,5 +1,6 @@
 import { decodeStorage, encodeStorage } from "./mock-storage";
 import { getActor } from "./demo-identity";
+import { cleanSkillName, skillKey } from "./skill-normalization";
 import { CURRENT_STUDENT_ID } from "./seed";
 import {
   projectDraftSchema,
@@ -228,6 +229,28 @@ export function createMockApi(
     return guarded(); // Synchronous read/validate/write also serializes calls within one tab.
   }
   return {
+    async resolveSkill(name: string) {
+      await delay();
+      return (
+        read().skills.find((s) => skillKey(s.name) === skillKey(name)) ?? null
+      );
+    },
+    async createSkill(name: string) {
+      return mutate(() => {
+        const db = read();
+        if (!db.students.some((s) => s.id === actorSource()))
+          throw new Error("Sign in to add a skill.");
+        const display = cleanSkillName(name);
+        const found = db.skills.find(
+          (s) => skillKey(s.name) === skillKey(display),
+        );
+        if (found) return found;
+        const skill = { id: `skill-${crypto.randomUUID()}`, name: display };
+        db.skills.push(skill);
+        write(db);
+        return skill;
+      });
+    },
     async myApplications(
       filters: ApplicationFilters = defaultApplicationFilters,
     ) {

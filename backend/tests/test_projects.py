@@ -359,7 +359,7 @@ async def test_upgrade_existing_identity_schema_preserves_accounts_sessions_and_
         await connection.run_sync(upgrade)
         assert (
             await connection.scalar(text("SELECT version_num FROM alembic_version"))
-            == "0007_project_conversion"
+            == "0008_skill_names"
         )
     async with database_app.state.session_factory() as db:
         after = [list(await db.scalars(select(m.id))) for m in (User, Profile, Session, Skill)]

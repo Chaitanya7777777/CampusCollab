@@ -170,3 +170,7 @@ The proxy browser config generates an ephemeral server credential, uses loopback
 - Local documentation links and Git whitespace checks passed. Private environment files remain ignored and unchanged. No real email was sent and no development database was reset.
 
 These checks verify local forwarding and configuration behavior, not Vercel ingress, Render cold starts, Neon connectivity or hosted email delivery. Those require the authorized deployment smoke test above.
+
+## Pending shared-skill release
+
+Migration `0008_skill_names` and the skill create/resolve endpoints require a backend-first rollout. The existing hosted verification above predates this change. No hosted migration or connectivity check was performed for this milestone. Follow the [shared-skill deployment sequence](backend/SKILLS.md#deployment-order), including pausing frontend automatic builds before a future authorized push. `RATE_SKILL_CREATE_LIMIT` defaults to 10 per account per 900-second rate window; no new secret is required.

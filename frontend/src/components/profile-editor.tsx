@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { SkillSelector } from "./skill-selector";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -9,15 +10,7 @@ import {
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
-import {
-  Check,
-  Code2,
-  Info,
-  Search,
-  Shapes,
-  Users,
-  UserRoundPen,
-} from "lucide-react";
+import { Check, Code2, Info, Shapes, Users, UserRoundPen } from "lucide-react";
 import { useSaveProfile, useSession } from "@/lib/queries";
 import { profileSchema } from "@/lib/validation";
 import type { ProjectView, Skill, Student } from "@/lib/models";
@@ -26,7 +19,6 @@ import {
   ErrorState,
   FieldError,
   Loading,
-  SkillChip,
   Skills,
   StudentSummary,
 } from "./ui";
@@ -139,7 +131,6 @@ export function ProfileForm({
   const schema: z.ZodType<ProfileFormValues, ProfileFormValues> = real
     ? apiProfileFormSchema
     : profileSchema;
-  const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
   const {
     register,
@@ -154,16 +145,6 @@ export function ProfileForm({
   });
   const selected = useWatch({ control, name: "skillIds" });
   const bio = useWatch({ control, name: "bio" });
-  const toggle = (id: string) => {
-    setNotice("");
-    setValue(
-      "skillIds",
-      selected.includes(id)
-        ? selected.filter((x) => x !== id)
-        : [...selected, id],
-      { shouldDirty: true, shouldValidate: true },
-    );
-  };
   const save = handleSubmit((values) => {
     setNotice("");
     mutation.mutate(values, {
@@ -281,66 +262,18 @@ export function ProfileForm({
                 Select up to 15 tools and skills from the catalog.
               </p>
             </div>
-            <div className="search-field">
-              <Search size={18} />
-              <input
-                aria-label="Search skill catalog"
-                placeholder="Search and add skills…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div>
-              <p className="eyebrow mb-2">
-                Selected skills · {selected.length}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {skills
-                  .filter((s) => selected.includes(s.id))
-                  .map((s) => (
-                    <SkillChip
-                      key={s.id}
-                      name={s.name}
-                      onRemove={() => toggle(s.id)}
-                    />
-                  ))}
-              </div>
-              <FieldError
-                id="skills-error"
-                message={errors.skillIds?.message}
-              />
-            </div>
-            <div
-              className="catalog-options"
-              aria-label="Available catalog skills"
-            >
-              {skills
-                .filter(
-                  (s) =>
-                    !selected.includes(s.id) &&
-                    s.name.toLowerCase().includes(search.toLowerCase()),
-                )
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    disabled={selected.length >= 15}
-                    onClick={() => toggle(s.id)}
-                    aria-label={`Add ${s.name}`}
-                  >
-                    + {s.name}
-                  </button>
-                ))}
-              {!skills.some(
-                (s) =>
-                  !selected.includes(s.id) &&
-                  s.name.toLowerCase().includes(search.toLowerCase()),
-              ) && (
-                <p className="helper">
-                  No additional skills match this search.
-                </p>
-              )}
-            </div>
+            <SkillSelector
+              skills={skills}
+              selected={selected}
+              onChange={(ids) =>
+                setValue("skillIds", ids, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              label="Search skill catalog"
+            />
+            <FieldError id="skills-error" message={errors.skillIds?.message} />
           </section>
           <div className="space-y-3">
             <h3>Social & portfolio links</h3>
@@ -394,7 +327,6 @@ export function ProfileForm({
               onClick={() => {
                 reset(initialValues);
                 mutation.reset();
-                setSearch("");
                 setNotice("Changes discarded.");
               }}
             >
@@ -418,12 +350,15 @@ export function ProfileEditor() {
   const query = useSession();
   const saveProfile = useSaveProfile();
   if (query.isPending) return <Loading label="Loading your student profile…" />;
-  if (query.isError)
+  if (!query.data)
     return (
-      <ErrorState error={query.error} retry={() => void query.refetch()} />
+      <ErrorState error={query.error!} retry={() => void query.refetch()} />
     );
   return (
     <div className="space-y-6">
+      {query.isError && (
+        <ErrorState error={query.error} retry={() => void query.refetch()} />
+      )}
       <div>
         <p className="eyebrow mb-2">My profile / Information & skills</p>
         <h1>Student Profile Workspace</h1>

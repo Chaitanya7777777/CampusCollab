@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { completeSignup, mailLink, openMailLink } from "../e2e-api/mail";
 // Reuse the exact scroll/form/session-expiry regression through same-origin forwarding.
 import "../e2e-api/focus.spec";
+import "../e2e-api/skills.spec";
 test.use({ trace: "off", screenshot: "off", video: "off" });
 
 test("same-origin signup, cookies, private profile, CSRF, logout and recovery", async ({

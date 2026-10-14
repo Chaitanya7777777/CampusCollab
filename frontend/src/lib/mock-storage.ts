@@ -7,6 +7,7 @@ import {
 } from "./validation";
 import { createSeed, CURRENT_STUDENT_ID } from "./seed";
 import type { Database } from "./models";
+import { cleanSkillName, skillKey } from "./skill-normalization";
 
 const applicationRecord = applicationSchema.extend({
   id: z.string(),
@@ -73,6 +74,7 @@ const draftRecord = z.object({
   values: projectDraftSchema,
 });
 const storageSchema = z.object({
+  skills: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
   version: z.union([z.literal(2), z.literal(3)]),
   seedProjectChanges: z
     .record(
@@ -108,6 +110,7 @@ export function decodeStorage(raw: string | null): Database {
           roles: [],
           memberships: [],
           drafts: [],
+          skills: [],
         }
       : storageSchema.parse(json);
     if (
@@ -123,6 +126,7 @@ export function decodeStorage(raw: string | null): Database {
       Object.assign(project, change);
     }
     db.projects.push(...saved.projects);
+    db.skills.push(...saved.skills);
     db.roles.push(...saved.roles);
     db.memberships.push(...saved.memberships);
     db.drafts = saved.drafts;
@@ -141,6 +145,9 @@ function validateDatabase(db: Database) {
   };
   unique([...db.projects, ...db.drafts].map((p) => p.id));
   unique(db.roles.map((r) => r.id));
+  unique(db.skills.map((s) => s.id));
+  unique(db.skills.map((s) => skillKey(s.name)));
+  db.skills.forEach((s) => cleanSkillName(s.name));
   unique(db.memberships.map((m) => m.id));
   unique(db.applications.map((a) => a.id));
   unique(db.applications.map((a) => `${a.studentId}/${a.projectId}`));
@@ -223,6 +230,9 @@ export function encodeStorage(db: Database) {
   return JSON.stringify(
     storageSchema.parse({
       version: 3,
+      skills: db.skills.filter(
+        (s) => !seed.skills.some((item) => item.id === s.id),
+      ),
       seedProjectChanges: Object.fromEntries(
         db.projects
           .filter(

@@ -169,6 +169,12 @@ def report(exc, stage):
         "explanation": explanation,
         "settings": configuration_fields(exc) if stage == "configuration_validation" else [],
     }
+    from app.skill_names import SkillNormalizationCollision
+
+    if isinstance(exc, SkillNormalizationCollision):
+        payload["category"] = "skill_normalization_collision"
+        payload["explanation"] = "Conflicting skill records require review; migration aborted."
+        payload["record_ids"] = exc.record_ids
     logger = logging.getLogger("campuscollab.startup")
     if not logger.handlers:
         logger.addHandler(logging.StreamHandler())

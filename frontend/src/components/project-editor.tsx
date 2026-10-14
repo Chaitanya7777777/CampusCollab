@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { SkillSelector } from "./skill-selector";
 import { API_MODE } from "@/lib/app-mode";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -35,7 +36,6 @@ import {
   ErrorState,
   FieldError,
   Loading,
-  SkillChip,
   Skills,
   StudentSummary,
   TeamCapacity,
@@ -81,49 +81,15 @@ function RoleSkills({
   index: number;
   error?: string;
 }) {
-  const [search, setSearch] = useState("");
   return (
     <div className="space-y-3">
-      <p className="micro-label" id={`role-skills-label-${index}`}>
-        Required skills
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {skills
-          .filter((s) => selected.includes(s.id))
-          .map((s) => (
-            <SkillChip
-              key={s.id}
-              name={s.name}
-              onRemove={() => onChange(selected.filter((id) => id !== s.id))}
-            />
-          ))}
-      </div>
-      <select
-        aria-label={`Add skill to role ${index + 1}`}
-        value=""
-        onChange={(e) => onChange([...selected, e.target.value])}
-        disabled={selected.length >= 15}
-        aria-invalid={!!error}
-        aria-describedby={`role-skills-error-${index}`}
-      >
-        <option value="">+ Add a catalog skill</option>
-        {skills
-          .filter(
-            (s) =>
-              !selected.includes(s.id) &&
-              s.name.toLowerCase().includes(search.toLowerCase()),
-          )
-          .map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-      </select>
-      <input
-        aria-label={`Search skills for role ${index + 1}`}
-        placeholder="Search skill catalog…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+      <p className="micro-label">Required skills</p>
+      <SkillSelector
+        skills={skills}
+        selected={selected}
+        onChange={onChange}
+        label={`Search skills for role ${index + 1}`}
+        selectLabel={`Add skill to role ${index + 1}`}
       />
       <FieldError id={`role-skills-error-${index}`} message={error} />
     </div>
@@ -769,9 +735,9 @@ export function ProjectEditor({
   const draft = useDraft(projectId);
   if (session.isPending || (projectId && draft.isPending))
     return <Loading label="Loading project workspace…" />;
-  if (session.isError)
+  if (!session.data)
     return (
-      <ErrorState error={session.error} retry={() => void session.refetch()} />
+      <ErrorState error={session.error!} retry={() => void session.refetch()} />
     );
   if (projectId && draft.isError)
     return (
@@ -784,6 +750,12 @@ export function ProjectEditor({
     );
   return (
     <div className="space-y-6">
+      {session.isError && (
+        <ErrorState
+          error={session.error}
+          retry={() => void session.refetch()}
+        />
+      )}
       <div className="creation-intro">
         <p className="eyebrow mb-2">
           Projects / {projectId ? "Edit draft" : "Create project"}
