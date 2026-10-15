@@ -16,7 +16,9 @@ CampusCollab connects project discovery with recruitment, application review, an
   <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
 </p>
 
-**[Open CampusCollab](https://campus-collab-beryl.vercel.app)** · **[API readiness](https://campuscollab-api.onrender.com/health/ready)** · **[Repository](https://github.com/Chaitanya7777777/CampusCollab)**
+**[Open CampusCollab](https://campus-collab-beryl.vercel.app)** <br>
+· **[API readiness](https://campuscollab-api.onrender.com/health/ready)**  <br>
+· **[Repository](https://github.com/Chaitanya7777777/CampusCollab)**
 
 </div>
 
